@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sridha Studio · Admin</title>
+  <meta name="robots" content="noindex,nofollow">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,300;1,400&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/admin.css">
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23F5F0E8'/><text x='50%25' y='62%25' text-anchor='middle' font-family='Georgia, serif' font-style='italic' font-size='30' fill='%238C2A38'>S·</text></svg>">
+</head>
+<body>
+
+  <!-- Password modal -->
+  <div class="modal" id="loginModal" role="dialog" aria-modal="true" aria-labelledby="loginTitle">
+    <form class="modal__card" id="loginForm">
+      <div class="modal__mark" id="loginTitle">Sridha Studio</div>
+      <div class="modal__sub">Editor access</div>
+      <div class="modal__rule"></div>
+      <div class="modal__field">
+        <label class="field__label" for="loginPwd">Password</label>
+        <input class="input" id="loginPwd" type="password" autocomplete="current-password" required>
+      </div>
+      <div class="modal__err" id="loginErr">&nbsp;</div>
+      <button type="submit" class="btn btn--primary" style="width:100%;justify-content:center;">Enter</button>
+    </form>
+  </div>
+
+  <!-- Toolbar -->
+  <header class="toolbar">
+    <div class="toolbar__brand">
+      the wedding <b>Sridha</b>
+      <span class="sub">Editor</span>
+    </div>
+    <div class="toolbar__actions">
+      <span class="saved-pill" id="savedPill">Saved</span>
+      <label class="file-trigger btn btn--ghost" title="Replace data with an exported file">
+        Import
+        <input id="importFile" type="file" accept=".js,.json,application/json,text/javascript">
+      </label>
+      <button class="btn btn--danger" id="resetBtn">Reset</button>
+      <button class="btn" id="exportBtn">Export data.js</button>
+      <a class="btn" href="index.html" target="_blank" rel="noopener">View live site</a>
+    </div>
+  </header>
+
+  <!-- Workspace -->
+  <main class="workspace">
+    <!-- Form column -->
+    <section class="form" id="form" aria-label="Editor">
+      <h1 class="form__title">Compose your portfolio.</h1>
+      <p class="form__hint">Every change saves automatically to this browser, and the preview on the right updates as you type. When you're ready to publish to the live site, click <b>Export data.js</b> and replace the file in <code>js/data.js</code> on your host.</p>
+
+      <!-- Sections render here -->
+      <div id="formBody"></div>
+
+      <div class="info">
+        <div class="info__title">How this works</div>
+        <div class="info__body">
+          Two pages share the same data: <code>index.html</code> (your clients) and <code>admin.html</code> (this editor). Edits live in your browser instantly — to make them visible to <em>everyone</em>, hit <b>Export data.js</b> and upload the downloaded file to <code>js/data.js</code> on your server. Photos are referenced by URL — paste links from Unsplash, your Drive (use the direct image URL), Cloudinary, or relative paths like <code>images/haldi/01.jpg</code> if you've uploaded files alongside the site.
+        </div>
+      </div>
+    </section>
+
+    <!-- Preview column -->
+    <section class="preview" aria-label="Live preview">
+      <div class="preview__head">
+        <div class="left">
+          <span class="dot"></span>
+          <span>Live preview</span>
+        </div>
+        <a id="openLive" href="index.html" target="_blank" rel="noopener">Open in new tab ↗</a>
+      </div>
+      <iframe class="preview__frame" id="previewFrame" src="index.html" title="Portfolio preview"></iframe>
+    </section>
+  </main>
+
+  <!-- Font catalog (shared with index.html) -->
+  <script src="js/fonts.js"></script>
+
+  <!-- Data + admin app -->
+  <script src="js/data.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>

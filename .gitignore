@@ -2,13 +2,6 @@
 # The Wedding Sridha — what NOT to commit / deploy
 # ─────────────────────────────────────────────────────────────────────
 
-# ── Admin editor (KEEP LOCAL, never deploy publicly) ────────────────
-# These files let anyone edit the site. They must stay on your machine
-# only. Edit locally → Export data.js → commit only data.js to publish.
-admin.html
-css/admin.css
-js/admin.js
-
 # ── OS / editor cruft ───────────────────────────────────────────────
 .DS_Store
 Thumbs.db
