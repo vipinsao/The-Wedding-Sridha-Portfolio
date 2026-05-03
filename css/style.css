@@ -1064,16 +1064,18 @@ body.has-cursor .lightbox { cursor: none; }
 
   .story__head { flex-direction: column; align-items: flex-start; gap: 16px; }
 
-  /* Mobile gallery: 2 columns. Featured 1st becomes a wide 2-col hero
-     (1 row tall) so the section still has visual rhythm. */
+  /* Mobile gallery: mirror the desktop editorial layout.
+     2-col grid with the first photo as a 2×2 featured hero; the rest
+     fill in around it as small cells — same composition the desktop uses
+     with 4 cols, just scaled to a phone. */
   .gallery {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
   .gallery .card:first-child {
     grid-column: span 2;
-    grid-row: span 1;
-    aspect-ratio: 4/3;            /* wide hero up top */
+    grid-row: span 2;
+    aspect-ratio: auto;           /* fills the 2×2 cell — matches desktop hero */
   }
   .card { aspect-ratio: 4/5; }
   /* Captions/indices always visible on touch (no hover state) */
@@ -1111,10 +1113,16 @@ body.has-cursor .lightbox { cursor: none; }
   .lightbox__nav.next { right: 8px; }
 }
 
-/* Tighter phone breakpoint — single column so each photo gets room */
+/* Tighter phone breakpoint — keep the 2-col editorial pattern (featured 2×2
+   hero with small cards below) so the small-screen rhythm matches desktop;
+   just shrink the gap so cells aren't cramped against the screen edges. */
 @media (max-width: 460px) {
-  .gallery { grid-template-columns: 1fr; gap: 12px; }
-  .gallery .card:first-child { grid-column: span 1; grid-row: span 1; aspect-ratio: 4/5; }
+  .gallery { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .gallery .card:first-child {
+    grid-column: span 2;
+    grid-row: span 2;
+    aspect-ratio: auto;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
