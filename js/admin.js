@@ -799,8 +799,12 @@ images/haldi/02.jpg"></textarea>
         field("Phone", "contact.phone", c.phone)
       )}
       ${row(
-        field("Instagram (@handle)", "contact.instagram", c.instagram),
+        field("Instagram (@handle or full URL)", "contact.instagram", c.instagram, { placeholder: "@theweddingsridha" }),
         field("Studio location", "contact.location", c.location)
+      )}
+      ${row(
+        field("YouTube (URL or @handle)", "contact.youtube", c.youtube, { placeholder: "@yourchannel" }),
+        field("Facebook (URL or page name)", "contact.facebook", c.facebook, { placeholder: "yourpage" })
       )}
       ${field("WhatsApp number (country code + digits, no spaces)", "contact.whatsapp", c.whatsapp, {
         placeholder: "919876543210"

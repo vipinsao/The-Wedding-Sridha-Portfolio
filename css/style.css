@@ -848,21 +848,19 @@ body.has-cursor .cursor { display: block; }
 .card__caption, .card__index { z-index: 3; }
 .card::after { z-index: 2; }
 
-/* Slow polaroid-sway on hover.
-   The card swings left, then right, then a smaller correction, then settles
-   into a 3px lift. Smooth pendulum-like motion — never a buzz.
-   Total duration 1.4s. Image inside the card stays perfectly still. */
-@keyframes cardShake {
-  0%   { transform: translate3d(0, 0, 0)        rotate(0deg); }
-  22%  { transform: translate3d(-3px, -3px, 0)  rotate(-0.8deg); }
-  46%  { transform: translate3d(3px, -4px, 0)   rotate(0.7deg); }
-  68%  { transform: translate3d(-2px, -4px, 0)  rotate(-0.35deg); }
-  84%  { transform: translate3d(1px, -3px, 0)   rotate(0.15deg); }
-  100% { transform: translate3d(0, -3px, 0)     rotate(0deg); }
+/* Smooth image-zoom on hover — the photo grows inside the rounded card
+   frame (image clipped by overflow:hidden + border-radius). Editorial
+   Pinterest-style. No card translation, no rotation, no neighbour
+   overlap. */
+.card__img:not(.is-back) {
+  transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.7s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.card:hover .card__img:not(.is-back) {
+  transform: scale(1.06);
 }
 .card:hover {
-  animation: cardShake 1.4s cubic-bezier(0.32, 0.08, 0.24, 1) both;
-  box-shadow: 0 22px 38px -22px rgba(30, 20, 20, 0.3);
+  box-shadow: 0 22px 38px -22px rgba(20, 36, 29, 0.32);
 }
 
 .card__caption {
@@ -1066,6 +1064,16 @@ body.has-cursor .cursor { display: block; }
   grid-template-columns: 1fr 1.2fr;
   gap: clamp(48px, 6vw, 96px);
   align-items: start;
+}
+/* Form-only mode — drops the left column entirely and centers the
+   form on the page. Used after the "Let's tell yours" panel was
+   removed. */
+.contact__inner--centered {
+  display: block;
+  max-width: 760px;
+}
+.contact__inner--centered .form {
+  margin: 0 auto;
 }
 .contact__left { display: flex; flex-direction: column; gap: 28px; }
 .contact__title {
@@ -1273,23 +1281,51 @@ body.has-cursor .cursor { display: block; }
   margin: 0 auto;
 }
 
-/* ── Footer ─────────────────────────────────────────────────────────── */
+/* ── Footer — centered social icons + copyright ─────────────────────── */
 .footer {
-  padding: 36px var(--pad-x);
+  padding: clamp(48px, 6vw, 72px) var(--pad-x);
   background: var(--bg-alt);
-  border-top: 1px solid var(--rule);
-  display: flex; justify-content: space-between; align-items: center;
-  gap: 24px; flex-wrap: wrap;
-  font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
+  border-top: 1px solid var(--rule-soft);
+  display: flex; flex-direction: column; align-items: center;
+  gap: 22px;
+  text-align: center;
+}
+.footer__socials {
+  display: flex; gap: 14px;
+  align-items: center; justify-content: center;
+}
+.footer__social {
+  width: 44px; height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--rule);
+  color: var(--ink-soft);
+  background: transparent;
+  transition: background 0.3s var(--ease), color 0.3s var(--ease),
+              border-color 0.3s var(--ease), transform 0.2s var(--ease);
+}
+.footer__social svg {
+  width: 18px; height: 18px;
+  display: block;
+}
+.footer__social:hover {
+  background: var(--maroon);
+  color: var(--cta-text);
+  border-color: var(--maroon);
+  transform: translateY(-1px);
+}
+.footer__copyright {
+  font-family: var(--f-serif);
+  font-style: italic;
+  font-size: 14px;
+  letter-spacing: 0.04em;
   color: var(--ink-mute);
 }
-.footer__brand {
-  font-family: var(--f-serif); font-style: italic;
-  letter-spacing: 0.04em; text-transform: none; font-size: 16px;
-  color: var(--ink-soft);
+.footer__copyright span {
+  font-style: normal;
+  margin: 0 2px;
+  color: var(--gold);
 }
-.footer__brand b { font-style: normal; font-weight: 500; color: var(--maroon); }
-.footer a:hover { color: var(--maroon); }
 
 /* ── Lightbox ───────────────────────────────────────────────────────── */
 .lightbox {

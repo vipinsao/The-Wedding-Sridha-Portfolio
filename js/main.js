@@ -465,22 +465,13 @@
     const root = $('[data-render="contact"]');
     if (!root) return;
     const c = DATA.contact || {};
-    const ig = (c.instagram || "").replace(/^@/, "");
     root.innerHTML = `
-      <div class="contact__inner">
-        <div class="contact__left">
+      <div class="contact__inner contact__inner--centered">
+        <div class="section__head section__head--center" style="margin-bottom: 36px;">
           <p class="eyebrow reveal">${escapeHtml(c.eyebrow || "Bookings & Enquiries")}</p>
-          <h2 class="contact__title reveal" data-delay="1">${escapeHtml(c.headline || "Let's tell yours.")}</h2>
-          <p class="contact__lede reveal" data-delay="2">${escapeHtml(c.body || "")}</p>
-          <div class="contact__directs reveal" data-delay="3">
-            ${c.email     ? `<div class="contact__direct"><span class="lbl">Email</span><span class="val"><a href="mailto:${escapeHtml(c.email)}">${escapeHtml(c.email)}</a></span></div>` : ""}
-            ${c.phone     ? `<div class="contact__direct"><span class="lbl">Phone</span><span class="val"><a href="tel:${escapeHtml(c.phone.replace(/\s+/g, ""))}">${escapeHtml(c.phone)}</a></span></div>` : ""}
-            ${c.instagram ? `<div class="contact__direct"><span class="lbl">Instagram</span><span class="val"><a href="https://instagram.com/${escapeHtml(ig)}" target="_blank" rel="noopener">${escapeHtml(c.instagram)}</a></span></div>` : ""}
-            ${c.location  ? `<div class="contact__direct"><span class="lbl">Studio</span><span class="val">${escapeHtml(c.location)}</span></div>` : ""}
-          </div>
         </div>
 
-        <form class="form reveal" data-delay="2" id="contactForm" novalidate>
+        <form class="form reveal" data-delay="1" id="contactForm" novalidate>
           <div class="form__row">
             <div class="form__field">
               <label class="form__label" for="f-name">Your name <span class="req">*</span></label>
@@ -554,19 +545,52 @@
     `;
   }
 
+  /* Inline-SVG social glyphs. Sized via the CSS .footer__social rule
+     (24×24 default; scales with currentColor). */
+  const SOCIAL_ICONS = {
+    instagram: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.16c3.2 0 3.58.012 4.85.07 1.17.054 1.8.249 2.23.413a3.72 3.72 0 0 1 1.38.896c.42.42.68.819.896 1.38.164.43.36 1.06.413 2.23.058 1.27.07 1.65.07 4.85s-.012 3.58-.07 4.85c-.054 1.17-.249 1.8-.413 2.23a3.72 3.72 0 0 1-.896 1.38c-.42.42-.819.68-1.38.896-.43.164-1.06.36-2.23.413-1.27.058-1.65.07-4.85.07s-3.58-.012-4.85-.07c-1.17-.054-1.8-.249-2.23-.413a3.72 3.72 0 0 1-1.38-.896 3.72 3.72 0 0 1-.896-1.38c-.164-.43-.36-1.06-.413-2.23C2.172 15.58 2.16 15.2 2.16 12s.012-3.58.07-4.85c.054-1.17.249-1.8.413-2.23a3.72 3.72 0 0 1 .896-1.38 3.72 3.72 0 0 1 1.38-.896c.43-.164 1.06-.36 2.23-.413C8.42 2.172 8.8 2.16 12 2.16zm0-2.16C8.74 0 8.33.014 7.05.072 5.78.13 4.9.32 4.14.62a5.91 5.91 0 0 0-2.13 1.39A5.91 5.91 0 0 0 .62 4.14C.32 4.9.13 5.78.072 7.05.014 8.33 0 8.74 0 12s.014 3.67.072 4.95c.058 1.27.248 2.15.548 2.91.31.79.726 1.46 1.39 2.13a5.91 5.91 0 0 0 2.13 1.39c.76.3 1.64.49 2.91.548C8.33 23.986 8.74 24 12 24s3.67-.014 4.95-.072c1.27-.058 2.15-.248 2.91-.548a5.91 5.91 0 0 0 2.13-1.39 5.91 5.91 0 0 0 1.39-2.13c.3-.76.49-1.64.548-2.91.058-1.28.072-1.69.072-4.95s-.014-3.67-.072-4.95c-.058-1.27-.248-2.15-.548-2.91a5.91 5.91 0 0 0-1.39-2.13A5.91 5.91 0 0 0 19.86.62C19.1.32 18.22.13 16.95.072 15.67.014 15.26 0 12 0zm0 5.84a6.16 6.16 0 1 0 0 12.32 6.16 6.16 0 0 0 0-12.32zm0 10.16A4 4 0 1 1 12 8a4 4 0 0 1 0 8zm6.41-11.85a1.44 1.44 0 1 0 0 2.88 1.44 1.44 0 0 0 0-2.88z"/></svg>`,
+    youtube:   `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3.02 3.02 0 0 0-2.13-2.13C19.46 3.5 12 3.5 12 3.5s-7.46 0-9.37.57A3.02 3.02 0 0 0 .5 6.2C0 8.13 0 12 0 12s0 3.87.5 5.8a3.02 3.02 0 0 0 2.13 2.13C4.54 20.5 12 20.5 12 20.5s7.46 0 9.37-.57a3.02 3.02 0 0 0 2.13-2.13C24 15.87 24 12 24 12s0-3.87-.5-5.8zM9.6 15.6V8.4l6.24 3.6-6.24 3.6z"/></svg>`,
+    facebook:  `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12c0-6.63-5.37-12-12-12S0 5.37 0 12c0 5.99 4.39 10.96 10.13 11.85V15.47H7.08V12h3.05V9.36c0-3.01 1.79-4.67 4.53-4.67 1.31 0 2.69.23 2.69.23v2.96h-1.51c-1.49 0-1.96.93-1.96 1.88V12h3.33l-.53 3.47h-2.8v8.38C19.61 22.96 24 17.99 24 12z"/></svg>`,
+  };
+
+  /* Normalize a stored social handle/URL into a real link. Accepts:
+       - full URL ("https://instagram.com/foo")
+       - @handle ("@foo")
+       - bare username ("foo") */
+  function socialUrl(platform, value) {
+    if (!value) return "";
+    const v = String(value).trim();
+    if (!v) return "";
+    if (/^https?:\/\//i.test(v)) return v;
+    const handle = v.replace(/^@/, "").replace(/\/$/, "");
+    if (platform === "instagram") return `https://instagram.com/${handle}`;
+    if (platform === "youtube")   return `https://youtube.com/${/^@/.test(v) ? v : "@" + handle}`;
+    if (platform === "facebook")  return `https://facebook.com/${handle}`;
+    return v;
+  }
+
   function renderFooter() {
     const root = $("#footer");
     if (!root) return;
     const c = DATA.contact || {};
-    const ig = (c.instagram || "").replace(/^@/, "");
     const year = new Date().getFullYear();
+    const brandName = (DATA.brand && DATA.brand.name) || "The Wedding Sridha";
+
+    const igUrl = socialUrl("instagram", c.instagram);
+    const ytUrl = socialUrl("youtube",   c.youtube);
+    const fbUrl = socialUrl("facebook",  c.facebook);
+
+    const social = (label, url, key) => url
+      ? `<a class="footer__social" href="${escapeHtml(url)}" target="_blank" rel="noopener" aria-label="${escapeHtml(label)}">${SOCIAL_ICONS[key]}</a>`
+      : "";
+
     root.innerHTML = `
-      <div class="footer__brand">the wedding <b>Sridha</b></div>
-      <div>${escapeHtml(c.location || "")}</div>
-      <div>
-        ${ig ? `<a href="https://instagram.com/${escapeHtml(ig)}" target="_blank" rel="noopener">Instagram</a> &nbsp;·&nbsp;` : ""}
-        © ${year} ${escapeHtml((DATA.brand && DATA.brand.name) || "The Wedding Sridha")}
+      <div class="footer__socials">
+        ${social("Instagram", igUrl, "instagram")}
+        ${social("YouTube",   ytUrl, "youtube")}
+        ${social("Facebook",  fbUrl, "facebook")}
       </div>
+      <div class="footer__copyright">${escapeHtml(brandName)} <span>©</span> ${year}</div>
     `;
   }
 
@@ -1030,7 +1054,9 @@
       if (!target) return;
       e.preventDefault();
       if (lenis) {
-        lenis.scrollTo(target, { offset: -140, duration: 1.4 });
+        /* 1.0s — faster than the previous 1.4s, still smooth and
+           controlled. Dropdown jumps now feel snappier. */
+        lenis.scrollTo(target, { offset: -140, duration: 1.0 });
       } else {
         const top = target.getBoundingClientRect().top + window.scrollY - 140;
         window.scrollTo({ top, behavior: "smooth" });
