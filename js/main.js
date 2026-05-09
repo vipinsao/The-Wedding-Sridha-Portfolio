@@ -577,8 +577,8 @@
     renderStoriesDropdown();   /* topnav links — depends on DATA.sections */
     renderTestimonials();
     renderPress();
-    renderContact();
     renderFaq();
+    renderContact();
     renderFooter();
   }
 
@@ -698,21 +698,33 @@
   }
 
   function setupTabs() {
-    /* Click handler — delegated so it survives re-renders. */
+    /* Click handler — delegated so it survives re-renders. Covers both
+       the in-section pill tabs AND the topnav Stories ▾ dropdown links
+       (which use href="#story-{id}"). The smooth-scroll handler still
+       preventDefaults the link, but we don't depend on hashchange — we
+       activate the tab synchronously here. */
     document.addEventListener("click", (e) => {
+      /* In-section tab pill */
       const tab = e.target.closest(".stories__tab");
-      if (!tab) return;
-      e.preventDefault();
-      const id = tab.dataset.tab;
-      activateStoryTab(id);
-      /* Also push the hash so a back-button restores the panel. */
-      try { history.replaceState(null, "", `#story-${id}`); } catch (_) {}
+      if (tab) {
+        e.preventDefault();
+        const id = tab.dataset.tab;
+        activateStoryTab(id);
+        try { history.replaceState(null, "", `#story-${id}`); } catch (_) {}
+        return;
+      }
+      /* Dropdown link / any anchor with href="#story-XXX" */
+      const link = e.target.closest('a[href^="#story-"]');
+      if (link) {
+        const m = /^#story-([a-zA-Z0-9_-]+)$/.exec(link.getAttribute("href") || "");
+        if (m) activateStoryTab(m[1]);
+        /* Don't preventDefault — smooth-scroll handler will scroll us
+           to the Stories section. */
+      }
     });
 
-    /* If the page loaded with #story-{id} in the URL, or the hash
-       changes (dropdown clicks before smooth-scroll), activate that
-       tab. The smooth-scroll handler already takes us to the parent
-       Stories section. */
+    /* If the page loaded with #story-{id} in the URL, activate that
+       tab. (We also listen on hashchange as a belt-and-braces.) */
     function syncFromHash() {
       const m = /^#story-([a-zA-Z0-9_-]+)$/.exec(location.hash);
       if (m) activateStoryTab(m[1]);
