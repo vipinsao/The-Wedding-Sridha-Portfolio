@@ -33,7 +33,7 @@
 html {
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
   /* No scroll-behavior here — Lenis handles smoothness on desktop, native momentum on touch. */
-  scroll-padding-top: 90px;          /* hash-link landings clear the fixed topbar */
+  scroll-padding-top: 150px;         /* hash-link landings clear the fixed topbar */
 }
 body {
   font-family: var(--f-sans);
@@ -164,7 +164,7 @@ body.has-cursor .cursor { display: block; }
 .topbar {
   position: fixed; top: 0; left: 0; right: 0;
   display: flex; justify-content: space-between; align-items: center;
-  padding: 22px var(--pad-x);
+  padding: 16px var(--pad-x);
   z-index: 100;
   pointer-events: none;
   transition: background 0.4s var(--ease), border-color 0.4s var(--ease);
@@ -193,18 +193,19 @@ body.has-cursor .cursor { display: block; }
 .topbar.is-light .topbar__brand { color: #fff; }
 .topbar.is-light .topbar__brand b { color: var(--gold); }
 
-/* Uploaded logo — sized for a portfolio header but compact enough that the
-   topbar stays a normal height (no overlap with the hero text). */
+/* Uploaded logo — full-size portfolio brand mark.
+   Held at 100×500 on desktop/tablet for maximum presence; scaled down only
+   on phones so the topbar doesn't dominate small viewports. */
 .topbar__brand--has-logo {
   align-items: center;
-  height: 48px;                              /* portfolio-grade brand lane */
+  height: 100px;                             /* portfolio-grade brand lane */
   display: flex;
 }
 .topbar__logo {
   display: block;
-  height: 48px;
+  height: 100px;
   width: auto;
-  max-width: 260px;
+  max-width: 500px;
   object-fit: contain;
   transition: filter 0.4s var(--ease), transform 0.4s var(--ease);
   /* Subtle white halo so dark logos stay visible against the dark hero */
@@ -218,12 +219,12 @@ body.has-cursor .cursor { display: block; }
   transform: translateY(-1px);
 }
 @media (max-width: 900px) {
-  .topbar__brand--has-logo { height: 40px; }
-  .topbar__logo { height: 40px; max-width: 200px; }
+  .topbar__brand--has-logo { height: 80px; }
+  .topbar__logo { height: 80px; max-width: 380px; }
 }
 @media (max-width: 600px) {
-  .topbar__brand--has-logo { height: 34px; }
-  .topbar__logo { height: 34px; max-width: 160px; }
+  .topbar__brand--has-logo { height: 64px; }
+  .topbar__logo { height: 64px; max-width: 280px; }
 }
 
 .topnav {
@@ -267,7 +268,7 @@ body.has-cursor .cursor { display: block; }
   display: flex; align-items: flex-end;
   /* Top padding reserves a clear lane for the fixed topbar (~70px) plus
      a buffer, so the eyebrow text never collides with the logo / nav. */
-  padding: clamp(96px, 12vh, 140px) var(--pad-x) calc(var(--pad-x) + 24px);
+  padding: clamp(160px, 18vh, 200px) var(--pad-x) calc(var(--pad-x) + 24px);
   color: #fff;
   overflow: hidden;
   isolation: isolate;
@@ -889,7 +890,7 @@ body.has-cursor .cursor { display: block; }
   opacity: 0.5;
 }
 .form__textarea { min-height: 110px; resize: vertical; line-height: 1.5; }
-.form__input[type="date"] { font-family: var(--f-sans); font-size: 15px; color: var(--ink-soft); }
+.form__input[type="date"] { font-family: var(--f-sans); font-size: 16px; color: var(--ink-soft); }
 
 .form__actions {
   display: flex; justify-content: space-between; align-items: center; gap: 24px;
@@ -1114,6 +1115,19 @@ body.has-cursor .lightbox { cursor: none; }
   .lightbox__nav.next { right: 8px; }
 }
 
+/* ── Tablet (601–900 px) ────────────────────────────────────────────
+   Phones get a single-column stack; tablets have enough width for a
+   two-column about/contact layout and a roomier hero. */
+@media (min-width: 601px) and (max-width: 900px) {
+  .about__inner { grid-template-columns: 1fr 1.2fr; gap: 36px; }
+  .about__photo { max-width: none; aspect-ratio: 4/5; }
+  .contact__inner { grid-template-columns: 1fr 1.2fr; gap: 40px; }
+  .form__row { grid-template-columns: 1fr 1fr; }
+  .testimonials__grid { grid-template-columns: repeat(2, 1fr); gap: 32px; }
+  .hero__mark-name { font-size: clamp(80px, 11vw, 140px); }
+  .gallery { grid-template-columns: repeat(4, 1fr); }
+}
+
 /* Tighter phone breakpoint — same 3-col + 2×2 hero pattern as ≤900px,
    just a smaller gap so the cells use the limited width well. */
 @media (max-width: 460px) {
@@ -1123,6 +1137,37 @@ body.has-cursor .lightbox { cursor: none; }
     grid-row: span 2;
     aspect-ratio: auto;
   }
+}
+
+/* ── Small phones (≤ 380 px) ────────────────────────────────────────
+   320–380 px hardware (iPhone SE, older Androids) needs tighter padding
+   and slightly smaller display type so nothing clips the viewport edge. */
+@media (max-width: 380px) {
+  :root { --pad-x: 18px; }
+  .topbar { padding: 12px var(--pad-x); }
+  .topbar__brand { font-size: 13px; }
+  .topbar__brand--has-logo { height: 52px; }
+  .topbar__logo { height: 52px; max-width: 220px; }
+  .topnav__cta { padding: 7px 11px; font-size: 9.5px; letter-spacing: 0.18em; }
+
+  .hero { padding-bottom: 60px; }
+  .hero__mark-name { font-size: 16vw; }
+  .hero__title { font-size: 16px; }
+  .hero__body { font-size: 13.5px; }
+  .btn-primary { padding: 14px 20px; font-size: 11px; letter-spacing: 0.24em; }
+  .btn-primary .arrow { width: 14px; }
+  .hero__actions { gap: 12px; }
+
+  .section { padding: 56px var(--pad-x); }
+  .section__title { font-size: 30px; }
+  .about__title { font-size: 26px; }
+  .stories-intro__title { font-size: 26px; }
+  .contact__title { font-size: 36px; }
+  .testimonial__quote { font-size: 17px; }
+  .form { padding: 18px; }
+  .faq__head { font-size: 16px; gap: 16px; }
+  .footer { padding: 28px var(--pad-x); font-size: 10px; letter-spacing: 0.22em; }
+  .lightbox__caption { font-size: 14px; padding: 0 16px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

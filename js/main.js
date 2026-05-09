@@ -34,6 +34,29 @@
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
     }[c]));
 
+  /* Normalize image URLs the client may paste into admin.html.
+     Google Drive "share" links (…/file/d/{id}/view, open?id=, uc?id=)
+     return an HTML preview page, not raw bytes — they will not render
+     in <img> or background-image. We rewrite them to the direct
+     googleusercontent endpoint, which streams the file.
+     Also handles Dropbox share links (?dl=0 → ?raw=1). Anything else
+     is returned unchanged. */
+  function normalizeImageUrl(u) {
+    if (!u || typeof u !== "string") return u;
+    if (u.startsWith("data:") || u.startsWith("blob:")) return u;
+    /* Google Drive */
+    let m = u.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]{10,})/);
+    if (m) return `https://lh3.googleusercontent.com/d/${m[1]}=w2400`;
+    m = u.match(/drive\.google\.com\/(?:open|uc)\?(?:[^#]*&)?id=([a-zA-Z0-9_-]{10,})/);
+    if (m) return `https://lh3.googleusercontent.com/d/${m[1]}=w2400`;
+    /* Dropbox: rewrite preview pages to raw download */
+    if (/dropbox\.com\/.+\?.*dl=0/.test(u)) return u.replace(/(\?|&)dl=0/, "$1raw=1");
+    if (/dropbox\.com\/.+/.test(u) && !/[?&](raw|dl)=1/.test(u)) {
+      return u + (u.includes("?") ? "&raw=1" : "?raw=1");
+    }
+    return u;
+  }
+
   /* ── 3. Apply chosen fonts (injects font CSS, sets CSS variables) ──
      Two kinds of font URLs are supported:
        1) A CSS URL (Google Fonts, Adobe Fonts, etc.) — injected via <link>
@@ -101,7 +124,7 @@
       if (brand.logo) {
         /* Logo uploaded → render as <img>, hides the text wordmark. */
         brandEl.classList.add("topbar__brand--has-logo");
-        brandEl.innerHTML = `<img src="${escapeHtml(brand.logo)}" alt="${escapeHtml(name)}" class="topbar__logo">`;
+        brandEl.innerHTML = `<img src="${escapeHtml(normalizeImageUrl(brand.logo))}" alt="${escapeHtml(name)}" class="topbar__logo">`;
       } else {
         /* No logo → fall back to the styled text wordmark. */
         brandEl.classList.remove("topbar__brand--has-logo");
@@ -132,7 +155,8 @@
     const parts = name.split(/\s+/);
     const last = parts.pop();
     const head = parts.join(" ");
-    const bg = h.photo ? `style="background-image:url('${escapeHtml(h.photo)}')"` : "";
+    const heroPhoto = normalizeImageUrl(h.photo);
+    const bg = heroPhoto ? `style="background-image:url('${escapeHtml(heroPhoto)}')"` : "";
 
     root.innerHTML = `
       <div class="hero__bg" ${bg}></div>
@@ -158,8 +182,9 @@
     const root = $('[data-render="about"]');
     if (!root) return;
     const a = DATA.about || {};
-    const photo = a.photo
-      ? `<div class="about__photo"><img src="${escapeHtml(a.photo)}" alt="${escapeHtml(a.title || "Behind the lens")}" loading="lazy" decoding="async" onerror="this.style.opacity=0"></div>`
+    const aboutPhoto = normalizeImageUrl(a.photo);
+    const photo = aboutPhoto
+      ? `<div class="about__photo"><img src="${escapeHtml(aboutPhoto)}" alt="${escapeHtml(a.title || "Behind the lens")}" loading="lazy" decoding="async" onerror="this.style.opacity=0"></div>`
       : `<div class="about__photo"></div>`;
     root.innerHTML = `
       <div class="about__inner">
@@ -196,15 +221,16 @@
       const photos = (s.photos || []).map((p, i) => {
         const focus = escapeHtml(p.focus || "center");
         const fallback = `${escapeHtml(s.title || s.id)} · ${String(i + 1).padStart(2, "0")}`;
+        const src = normalizeImageUrl(p.src || "");
         return `
           <figure class="card reveal" data-focus="${focus}" data-fallback="${fallback}"
                   data-section="${escapeHtml(s.id || "")}" data-index="${i}"
-                  data-src="${escapeHtml(p.src || "")}"
+                  data-src="${escapeHtml(src)}"
                   data-caption="${escapeHtml(p.caption || "")}"
                   oncontextmenu="return false">
             <span class="card__index">${escapeHtml(s.title || "")} · ${String(i + 1).padStart(2, "0")}</span>
             <img class="card__img" loading="lazy" decoding="async" fetchpriority="low"
-                 src="${escapeHtml(p.src || "")}"
+                 src="${escapeHtml(src)}"
                  alt="${escapeHtml(p.alt || s.title || "")}"
                  onerror="this.closest('.card').classList.add('is-broken')">
             <img class="card__img is-back" loading="lazy" decoding="async" fetchpriority="low"
@@ -770,9 +796,9 @@
       if (!target) return;
       e.preventDefault();
       if (lenis) {
-        lenis.scrollTo(target, { offset: -80, duration: 1.4 });
+        lenis.scrollTo(target, { offset: -140, duration: 1.4 });
       } else {
-        const top = target.getBoundingClientRect().top + window.scrollY - 80;
+        const top = target.getBoundingClientRect().top + window.scrollY - 140;
         window.scrollTo({ top, behavior: "smooth" });
       }
     });
