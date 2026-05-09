@@ -576,10 +576,10 @@
     renderStories();
     renderStoriesDropdown();   /* topnav links — depends on DATA.sections */
     renderTestimonials();
-    renderPress();
-    renderFaq();
     renderContact();
     renderFooter();
+    /* renderPress() and renderFaq() removed from the page — the data
+       and admin cards remain so they can be re-enabled later. */
   }
 
   /* ── 5. Loader ────────────────────────────────────────────────────── */

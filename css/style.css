@@ -689,7 +689,27 @@ body.has-cursor .cursor { display: block; }
 
 /* ── Stories: parent section + tabs + panels ────────────────────────── */
 .stories { background: var(--bg); }
-.stories__intro { margin-bottom: clamp(36px, 5vw, 64px); }
+.stories__intro {
+  margin-bottom: clamp(36px, 5vw, 64px);
+  /* Override .section__head--center's 760px cap so the body text
+     can stretch across the full content width. */
+  max-width: 1280px !important;
+}
+.stories__intro .stories-intro__body {
+  /* Drop the 600px cap so the line gets the room it needs to fit
+     on one row at desktop widths. */
+  max-width: none;
+  font-size: clamp(15px, 1.3vw, 19px);
+  padding: 0 var(--pad-x);
+}
+@media (min-width: 1100px) {
+  .stories__intro .stories-intro__body {
+    /* On desktop, force the lede onto a single line. */
+    white-space: nowrap;
+    overflow: visible;
+    padding: 0;
+  }
+}
 .stories__tabs {
   display: flex; gap: 6px;
   max-width: 1280px; margin: 0 auto clamp(36px, 5vw, 60px);
