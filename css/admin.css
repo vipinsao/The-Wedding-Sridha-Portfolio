@@ -125,6 +125,107 @@ a:hover { text-decoration: underline; }
   white-space: nowrap;
 }
 
+/* Primary upload button — the new upload-first photo row UX. Big,
+   accent-coloured, can't be missed. */
+.btn--upload-big {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--maroon, #2A4F44);
+  color: var(--cta-text, #fff);
+  border: 1px solid var(--maroon, #2A4F44);
+  border-radius: 4px;
+  font-family: var(--f-sans, system-ui, sans-serif);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn--upload-big:hover {
+  background: var(--maroon-dk, #1B3A30);
+  border-color: var(--maroon-dk, #1B3A30);
+}
+.btn--upload-big:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* One-off image fields (hero photo, about photo, etc) — same upload-first
+   pattern as the photo row, just larger thumbnail. */
+.image-field {
+  margin-bottom: 16px;
+}
+.image-field__inner {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 16px;
+  align-items: start;
+  margin-top: 6px;
+}
+.image-field__thumb {
+  width: 200px; height: 200px;
+  background: var(--bg-deep);
+  background-size: cover;
+  background-position: center;
+  border-radius: 8px;
+  display: grid; place-items: center;
+  overflow: hidden;
+}
+.image-field__thumb.is-empty {
+  background: linear-gradient(135deg, var(--bg-deep), var(--bg-alt));
+  border: 1px dashed var(--rule);
+}
+.image-field__icon {
+  font-size: 38px;
+  opacity: 0.45;
+}
+.image-field__actions {
+  display: flex; flex-direction: column; gap: 10px;
+}
+.image-field__url-toggle {
+  font-size: 12px;
+}
+.image-field__url-toggle summary {
+  cursor: pointer;
+  color: var(--ink-mute);
+  font-style: italic;
+  letter-spacing: 0.04em;
+  padding: 4px 0;
+  user-select: none;
+  list-style: none;
+}
+.image-field__url-toggle summary::-webkit-details-marker { display: none; }
+.image-field__url-toggle summary::before {
+  content: "▸ ";
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-style: normal;
+}
+.image-field__url-toggle[open] summary::before { transform: rotate(90deg); }
+.image-field__url-toggle summary:hover { color: var(--ink-soft); }
+.image-field__url-toggle .input {
+  margin-top: 6px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
+}
+.field__hint {
+  font-size: 12px;
+  color: var(--ink-mute);
+  font-style: italic;
+  margin: 4px 0 6px;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 700px) {
+  .image-field__inner { grid-template-columns: 1fr; }
+  .image-field__thumb { width: 100%; height: 240px; }
+  .photo-row { grid-template-columns: 100px 1fr auto; }
+  .photo-row__upload { width: 100px; }
+  .photo-row__thumb { width: 100px; height: 100px; }
+}
+
 /* ── Workspace ──────────────────────────────────────────────────────── */
 .workspace {
   display: grid;
@@ -286,37 +387,78 @@ a:hover { text-decoration: underline; }
 }
 .photo-row {
   display: grid;
-  grid-template-columns: 60px 1fr auto;
-  gap: 12px;
+  grid-template-columns: 130px 1fr auto;
+  gap: 14px;
   align-items: stretch;
   background: var(--bg);
   border: 1px solid var(--rule);
-  padding: 8px;
-  border-radius: 3px;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.photo-row__upload {
+  display: flex; flex-direction: column; gap: 8px;
+  width: 130px;
 }
 .photo-row__thumb {
-  width: 60px; height: 80px;
+  width: 130px; height: 130px;
   background: var(--bg-deep);
   background-size: cover;
   background-position: center;
-  border-radius: 2px;
+  border-radius: 6px;
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
+  display: grid; place-items: center;
+}
+.photo-row__thumb.is-empty {
+  background: linear-gradient(135deg, var(--bg-deep), var(--bg-alt));
+  border: 1px dashed var(--rule);
+}
+.photo-row__thumb-icon {
+  font-size: 26px;
+  opacity: 0.45;
+  pointer-events: none;
 }
 .photo-row__thumb.is-broken::before {
   content: "?"; position: absolute; inset: 0;
   display: grid; place-items: center;
-  font-family: var(--f-serif); font-style: italic; font-size: 20px;
+  font-family: var(--f-serif); font-style: italic; font-size: 24px;
   color: var(--gold);
 }
 .photo-row__fields {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 6px;
+  display: grid; gap: 8px;
   min-width: 0;
+  align-content: start;
 }
-.photo-row__fields .src { grid-column: 1 / -1; }
 .photo-row__fields .input {
-  padding: 6px 8px; font-size: 12px;
+  padding: 8px 10px; font-size: 13px;
+}
+.photo-row__url-toggle {
+  font-size: 12px;
+}
+.photo-row__url-toggle summary {
+  cursor: pointer;
+  color: var(--ink-mute);
+  font-style: italic;
+  letter-spacing: 0.04em;
+  padding: 4px 0;
+  user-select: none;
+  list-style: none;
+}
+.photo-row__url-toggle summary::-webkit-details-marker { display: none; }
+.photo-row__url-toggle summary::before {
+  content: "▸ ";
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-style: normal;
+}
+.photo-row__url-toggle[open] summary::before { transform: rotate(90deg); }
+.photo-row__url-toggle summary:hover { color: var(--ink-soft); }
+.photo-row__url-toggle .input {
+  margin-top: 6px;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 11px;
 }
 .photo-row__ctrls {
   display: flex; flex-direction: column; gap: 4px;
@@ -891,7 +1033,9 @@ a:hover { text-decoration: underline; }
   .toolbar__brand .sub { display: none; }
   .form { padding: 18px; }
   .field__row { grid-template-columns: 1fr; }
-  .photo-row { grid-template-columns: 50px 1fr; }
-  .photo-row__ctrls { grid-column: 1 / -1; flex-direction: row; justify-content: flex-end; }
+  .photo-row { grid-template-columns: 1fr; gap: 10px; }
+  .photo-row__upload { width: 100%; }
+  .photo-row__thumb { width: 100%; height: 200px; }
+  .photo-row__ctrls { flex-direction: row; justify-content: flex-end; }
   .btn { padding: 8px 12px; font-size: 11px; letter-spacing: 0.14em; }
 }

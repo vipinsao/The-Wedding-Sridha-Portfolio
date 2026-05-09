@@ -206,25 +206,68 @@
       </div>`;
   }
 
-  /* Generic photo row (for sections) */
+  /* Generic photo row (for sections).
+     Upload-first UX: a big thumbnail + "Upload image" button is the
+     primary control. The raw URL input is hidden by default and only
+     shown if the user clicks "Paste URL instead" — for the rare case
+     of an external Pexels/Unsplash link. */
   function photoRow(sIdx, pIdx, photo) {
     const src = escapeAttr(photo.src || "");
     const thumbStyle = src ? `background-image:url('${src}')` : "";
+    const hasPhoto = !!src;
     return `
       <div class="photo-row" data-list-row="sections.${sIdx}.photos.${pIdx}">
-        <div class="photo-row__thumb" style="${thumbStyle}"></div>
+        <div class="photo-row__upload">
+          <div class="photo-row__thumb${hasPhoto ? "" : " is-empty"}" style="${thumbStyle}">
+            ${hasPhoto ? "" : `<span class="photo-row__thumb-icon">📷</span>`}
+          </div>
+          <button type="button" class="btn--upload-big" data-upload-target="sections.${sIdx}.photos.${pIdx}.src">
+            ${hasPhoto ? "↻ Replace image" : "↑ Upload image"}
+          </button>
+        </div>
         <div class="photo-row__fields">
-          <input class="input src" type="url" placeholder="Image URL (https://… or images/foo.jpg)"
-                 data-bind="sections.${sIdx}.photos.${pIdx}.src" value="${src}">
-          <input class="input" type="text" placeholder="Alt text"
+          <input class="input" type="text" placeholder="Alt text (describe the photo)"
                  data-bind="sections.${sIdx}.photos.${pIdx}.alt" value="${escapeAttr(photo.alt || "")}">
           <input class="input" type="text" placeholder="Caption (optional)"
                  data-bind="sections.${sIdx}.photos.${pIdx}.caption" value="${escapeAttr(photo.caption || "")}">
+          <details class="photo-row__url-toggle">
+            <summary>Paste URL instead</summary>
+            <input class="input src" type="url" placeholder="https://… or images/foo.jpg"
+                   data-bind="sections.${sIdx}.photos.${pIdx}.src" value="${src}">
+          </details>
         </div>
         <div class="photo-row__ctrls">
           <button data-act="up" title="Move up">↑</button>
           <button data-act="down" title="Move down">↓</button>
           <button data-act="remove" title="Remove">×</button>
+        </div>
+      </div>`;
+  }
+
+  /* Build a single big upload control for a one-off image field
+     (hero.photo, about.photo). Returns HTML containing a thumbnail,
+     upload button, and a collapsed URL input fallback. */
+  function imageUploadField(label, bindKey, currentValue, hint) {
+    const src = escapeAttr(currentValue || "");
+    const has = !!src;
+    return `
+      <div class="image-field">
+        <label class="field__label">${escapeHtml(label)}</label>
+        ${hint ? `<p class="field__hint">${escapeHtml(hint)}</p>` : ""}
+        <div class="image-field__inner">
+          <div class="image-field__thumb${has ? "" : " is-empty"}" style="${has ? `background-image:url('${src}')` : ""}">
+            ${has ? "" : `<span class="image-field__icon">📷</span>`}
+          </div>
+          <div class="image-field__actions">
+            <button type="button" class="btn--upload-big" data-upload-target="${escapeAttr(bindKey)}">
+              ${has ? "↻ Replace image" : "↑ Upload image"}
+            </button>
+            <details class="image-field__url-toggle">
+              <summary>Paste URL instead</summary>
+              <input class="input" type="url" placeholder="https://… or images/foo.jpg"
+                     data-bind="${escapeAttr(bindKey)}" value="${src}">
+            </details>
+          </div>
         </div>
       </div>`;
   }
@@ -371,7 +414,7 @@
       { name: "Linen & Espresso",  bg: "#F2EAE3", ink: "#3E2723" },
       { name: "Sand & Navy",       bg: "#E8DDD0", ink: "#1A2E45" },
       { name: "Bone & Rust",       bg: "#EFE6DC", ink: "#7C3F00" },
-      { name: "Ink & Champagne",   bg: "#1A1612", ink: "#E8D4A8" }
+      { name: "Stone & Olive",     bg: "#EAE6DC", ink: "#4F5239" }
     ];
     const presetButtons = presets.map((p) => `
       <button type="button" class="theme-preset" data-theme-preset='${escapeAttr(JSON.stringify({bg:p.bg, ink:p.ink}))}'
@@ -550,7 +593,8 @@
   function renderHero() {
     const h = state.hero || (state.hero = {});
     return block("hero", "Hero", "Opening panel", `
-      ${field("Hero photo URL (full-bleed background)", "hero.photo", h.photo, { placeholder: "https://… or images/hero.jpg" })}
+      ${imageUploadField("Hero photo (full-bleed background)", "hero.photo", h.photo,
+        "The big photo behind your title — landscape works best.")}
       ${field("Eyebrow (small caps above wordmark)", "hero.eyebrow", h.eyebrow)}
       ${field("Headline / tagline", "hero.title", h.title, { type: "textarea", rows: 2 })}
       ${field("Body line", "hero.body", h.body, { type: "textarea", rows: 2 })}
@@ -564,7 +608,8 @@
   function renderAbout() {
     const a = state.about || (state.about = {});
     return block("about", "About", "Behind the lens", `
-      ${field("Portrait / signature photo URL", "about.photo", a.photo, { placeholder: "https://… or images/about.jpg" })}
+      ${imageUploadField("Portrait / signature photo", "about.photo", a.photo,
+        "Your photo for the About section — portrait orientation looks best.")}
       ${field("Eyebrow", "about.eyebrow", a.eyebrow)}
       ${field("Title (e.g. Hello, I'm Sridha.)", "about.title", a.title)}
       ${field("Body — your bio in 3–4 sentences", "about.body", a.body, { type: "textarea", rows: 5 })}
@@ -686,19 +731,24 @@ images/haldi/02.jpg"></textarea>
         field("Instagram (@handle)", "contact.instagram", c.instagram),
         field("Studio location", "contact.location", c.location)
       )}
-      ${field("Form endpoint URL (Formspree / Web3Forms)", "contact.formAction", c.formAction, {
-        placeholder: "https://formspree.io/f/XXXXXXX"
+      ${field("WhatsApp number (country code + digits, no spaces)", "contact.whatsapp", c.whatsapp, {
+        placeholder: "919876543210"
+      })}
+      ${field("Form endpoint URL (advanced — Formspree / Web3Forms)", "contact.formAction", c.formAction, {
+        placeholder: "Leave blank — Telegram (/api/enquire) handles it"
       })}
       ${field("Success message (after enquiry sent)", "contact.successMessage", c.successMessage, { type: "textarea", rows: 2 })}
       ${field("Footer line", "contact.footerLine", c.footerLine)}
       <div class="info" style="margin-top:14px;">
-        <div class="info__title">Receiving enquiries</div>
+        <div class="info__title">How enquiries reach you</div>
         <div class="info__body">
-          The contact form sends to <b>your inbox</b> in two ways:
+          The contact form tries three transports in order:
           <ol style="margin:8px 0 0 18px; padding:0;">
-            <li><b>Best:</b> sign up free at <a href="https://formspree.io" target="_blank" rel="noopener">formspree.io</a>, paste your endpoint URL into the field above. Enquiries will be emailed to you instantly.</li>
-            <li><b>Fallback:</b> leave the endpoint blank — the form will open the visitor's email client with their enquiry pre-written, addressed to your email above.</li>
+            <li><b>Telegram (recommended).</b> Set <code>TELEGRAM_BOT_TOKEN</code> and <code>TELEGRAM_CHAT_ID</code> in your Netlify environment variables. Every enquiry is delivered to your Telegram instantly. Free, unlimited, no setup beyond the bot.</li>
+            <li><b>Formspree</b> (optional). If you fill the endpoint URL above, the form will POST there as a backup.</li>
+            <li><b>Mailto fallback.</b> If none of the above work (e.g. previewing locally), the form opens the visitor's email client.</li>
           </ol>
+          <p style="margin:10px 0 0;">The <b>WhatsApp button</b> appears on the live site whenever a WhatsApp number is set above. It opens WhatsApp with the visitor's enquiry pre-filled — they just press Send.</p>
         </div>
       </div>
     `);
@@ -790,13 +840,18 @@ images/haldi/02.jpg"></textarea>
       if (!bind) return;
       setPath(state, bind, el.value);
 
-      /* Photo thumbnail live update */
-      if (bind.endsWith(".src")) {
-        const row = el.closest(".photo-row");
-        const thumb = row && row.querySelector(".photo-row__thumb");
+      /* Photo thumbnail live update — covers both the section photo rows
+         (sections.*.photos.*.src) and the dedicated hero/about image
+         fields (hero.photo / about.photo). */
+      if (isImageBind(bind)) {
+        const container = el.closest(".photo-row, .image-field");
+        const thumb = container && container.querySelector(".photo-row__thumb, .image-field__thumb");
         if (thumb) {
           thumb.style.backgroundImage = el.value ? `url('${el.value}')` : "";
+          thumb.classList.toggle("is-empty", !el.value);
           thumb.classList.remove("is-broken");
+          const icon = thumb.querySelector(".photo-row__thumb-icon, .image-field__icon");
+          if (el.value && icon) icon.remove();
         }
       }
 
@@ -1308,6 +1363,7 @@ images/haldi/02.jpg"></textarea>
      plumbing fires. */
   const IMAGE_BIND_PATTERNS = [
     /\.src$/,                    // photo rows (sections.*.photos.*.src)
+    /\.photo$/,                  // hero.photo, about.photo
     /^brand\.logo$/,             // brand logo
     /\.image$/,                  // misc generic image fields
     /\.cover$/,                  // covers (e.g. testimonials.*.cover)
@@ -1325,6 +1381,10 @@ images/haldi/02.jpg"></textarea>
       if (inp.dataset.uploadWired === "1") return;
       inp.dataset.uploadWired = "1";
 
+      /* If the photo row already rendered a primary upload button for
+         this bind (the new upload-first UI), don't add a second one. */
+      if (document.querySelector(`.btn--upload-big[data-upload-target="${CSS.escape(bind)}"]`)) return;
+
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "btn btn--ghost btn--upload";
@@ -1341,19 +1401,35 @@ images/haldi/02.jpg"></textarea>
 
   async function uploadImageFile(file) {
     if (!file) throw new Error("no file");
-    if (file.size > 12 * 1024 * 1024) throw new Error("Image is over 12 MB. Please compress it first.");
+    if (file.size > 25 * 1024 * 1024) throw new Error("Image is over 25 MB. Please compress it first.");
+
+    /* Try the server upload first. On production (Netlify Functions
+       running) this stores the file in Blobs and returns /api/images/<key>
+       — much smaller payload than embedding base64 inside data.js. */
     const fd = new FormData();
     fd.append("file", file, file.name);
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      credentials: "same-origin",
-      body: fd,
-    });
+    let res;
+    try {
+      res = await fetch("/api/upload", {
+        method: "POST",
+        credentials: "same-origin",
+        body: fd,
+      });
+    } catch (_) {
+      /* Network error — usually means we're on the local static server
+         with no Netlify Functions. Fall back to base64 embedding. */
+      return await embedAsDataUri(file);
+    }
     if (res.status === 401) {
       sessionStorage.removeItem(SESSION_KEY);
       $("#loginModal").classList.remove("is-hidden");
       $("#loginPwd").focus();
       throw new Error("Please log in again.");
+    }
+    if (res.status === 404) {
+      /* /api/upload doesn't exist on this host — local Python server,
+         GitHub Pages, etc. Embed as data URI so the workflow still works. */
+      return await embedAsDataUri(file);
     }
     if (!res.ok) {
       const info = await res.json().catch(() => ({}));
@@ -1362,10 +1438,55 @@ images/haldi/02.jpg"></textarea>
     return res.json();
   }
 
+  /* Local fallback: client-side resize + JPEG re-encode, then embed as a
+     data URI. Keeps payload reasonable when there's no server upload
+     endpoint. Resizes to fit within 1800 px on the long edge at q=0.82. */
+  async function embedAsDataUri(file) {
+    const dataUri = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = (e) => resolve(String(e.target.result || ""));
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
+    /* SVGs and tiny files: no point resizing — just embed verbatim. */
+    if (/^data:image\/svg/.test(dataUri) || file.size < 220 * 1024) {
+      return { ok: true, url: dataUri, embedded: true };
+    }
+    try {
+      const resized = await resizeDataUri(dataUri, 1800, 0.82);
+      return { ok: true, url: resized, embedded: true };
+    } catch (_) {
+      return { ok: true, url: dataUri, embedded: true };
+    }
+  }
+  function resizeDataUri(dataUri, maxLong, quality) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const longEdge = Math.max(img.naturalWidth, img.naturalHeight);
+        const ratio = longEdge > maxLong ? maxLong / longEdge : 1;
+        const w = Math.round(img.naturalWidth  * ratio);
+        const h = Math.round(img.naturalHeight * ratio);
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        const ctx = c.getContext("2d");
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, w, h);
+        try { resolve(c.toDataURL("image/jpeg", quality)); }
+        catch (e) { reject(e); }
+      };
+      img.onerror = reject;
+      img.src = dataUri;
+    });
+  }
+
   function wireUploadButtons() {
-    /* One delegated handler. */
+    /* One delegated handler — covers both the auto-injected small button
+       (.btn--upload) and the upload-first photo-row primary button
+       (.btn--upload-big). */
     document.body.addEventListener("click", async (e) => {
-      const btn = e.target.closest(".btn--upload");
+      const btn = e.target.closest(".btn--upload, .btn--upload-big");
       if (!btn) return;
       e.preventDefault();
       const bind = btn.dataset.uploadTarget;
@@ -1387,8 +1508,28 @@ images/haldi/02.jpg"></textarea>
           const out = await uploadImageFile(file);
           target.value = out.url;
           target.dispatchEvent(new Event("input", { bubbles: true }));
+
+          /* Refresh the photo-row / image-field thumbnail and clear its
+             empty-state placeholder so the new image shows immediately. */
+          const row = btn.closest(".photo-row, .image-field");
+          if (row) {
+            const thumb = row.querySelector(".photo-row__thumb, .image-field__thumb");
+            if (thumb) {
+              thumb.style.backgroundImage = `url('${out.url}')`;
+              thumb.classList.remove("is-empty", "is-broken");
+              const icon = thumb.querySelector(".photo-row__thumb-icon, .image-field__icon");
+              if (icon) icon.remove();
+            }
+          }
+
           btn.textContent = "Uploaded ✓";
-          setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 1200);
+          /* After the brief confirmation, settle into "Replace image"
+             since this slot now has a photo. */
+          const isPrimary = btn.classList.contains("btn--upload-big");
+          setTimeout(() => {
+            btn.textContent = isPrimary ? "↻ Replace image" : (old || "Upload");
+            btn.disabled = false;
+          }, 1200);
         } catch (err) {
           alert(err.message || "Upload failed.");
           btn.textContent = old;

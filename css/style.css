@@ -16,6 +16,7 @@
   --maroon-dk: #1B3A30;
   --gold:      #B59570;        /* warm muted brass — pairs with sage */
   --gold-soft: #D8C4A6;
+  --cta-text:  #FFFFFF;        /* applyTheme() may flip this to dark on light-accent themes */
   --rule:      rgba(20, 36, 29, 0.14);
   --rule-soft: rgba(20, 36, 29, 0.07);
   --field:     rgba(20, 36, 29, 0.18);
@@ -343,7 +344,7 @@ body.has-cursor .cursor { display: block; }
   display: inline-flex; align-items: center; gap: 14px;
   padding: 16px 28px;
   background: var(--maroon);
-  color: #fff;
+  color: var(--cta-text);
   font-size: 12px; letter-spacing: 0.32em; text-transform: uppercase;
   font-weight: 500;
   border: 1px solid var(--maroon);
@@ -904,11 +905,50 @@ body.has-cursor .cursor { display: block; }
   display: flex; justify-content: space-between; align-items: center; gap: 24px;
   margin-top: 8px; flex-wrap: wrap;
 }
+.form__btns {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+}
+
+/* Honeypot — must be reachable to bots (so they auto-fill it) but
+   completely invisible and unreachable to humans. Off-screen, no
+   visibility, no tab order. */
+.form__honeypot {
+  position: absolute !important;
+  left: -10000px;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* WhatsApp brand-green CTA — sits next to "Send Enquiry". */
+.btn-whatsapp {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 16px 22px;
+  background: #25D366;
+  color: #fff;
+  font-family: var(--f-sans);
+  font-size: 12px; letter-spacing: 0.28em; text-transform: uppercase;
+  font-weight: 500;
+  border: 1px solid #25D366;
+  cursor: pointer;
+  transition: background 0.3s var(--ease), border-color 0.3s var(--ease), transform 0.2s var(--ease);
+}
+.btn-whatsapp:hover { background: #1DA851; border-color: #1DA851; transform: translateY(-1px); }
+.btn-whatsapp svg {
+  width: 18px; height: 18px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+@media (max-width: 600px) {
+  .btn-whatsapp { width: 100%; justify-content: center; }
+  .form__btns { flex-direction: column; align-items: stretch; }
+}
 .form__submit {
   display: inline-flex; align-items: center; gap: 14px;
   padding: 16px 28px;
   background: var(--maroon);
-  color: #fff;
+  color: var(--cta-text);
   font-size: 12px; letter-spacing: 0.32em; text-transform: uppercase;
   font-weight: 500;
   border: 1px solid var(--maroon);

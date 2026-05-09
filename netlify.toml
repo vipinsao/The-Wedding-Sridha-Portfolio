@@ -29,3 +29,8 @@
   from = "/api/images/*"
   to   = "/.netlify/functions/images/:splat"
   status = 200
+
+[[redirects]]
+  from = "/api/enquire"
+  to   = "/.netlify/functions/enquire"
+  status = 200

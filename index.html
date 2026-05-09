@@ -45,10 +45,10 @@
   <link rel="preconnect" href="https://images.pexels.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Italiana&family=Cormorant+Garamond:ital,wght@0,400;0,500;1,300;1,400;1,500&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-  <!-- Preload the hero image so first paint is sharp and the first scroll
-       has no concurrent decode jank. -->
-  <link rel="preload" as="image" fetchpriority="high"
-        href="https://images.pexels.com/photos/30171219/pexels-photo-30171219.jpeg?auto=compress&cs=tinysrgb&w=2400">
+  <!-- Hero image preload removed — the hero photo is data-driven (loaded
+       from /api/content) so we can't statically preload the right URL
+       at parse time. The browser fetches it as soon as main.js sets
+       the background-image, and the loader screen covers the brief gap. -->
 
   <link rel="stylesheet" href="css/style.css">
 

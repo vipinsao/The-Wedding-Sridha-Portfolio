@@ -94,10 +94,13 @@
         /* First load on this device — boot now. */
         window.SRIDHA_DATA = data;
         appendThen();
-      } else if (changed && MODE === "site") {
+      } else if (changed && MODE === "site" && window.self === window.top) {
         /* The page already booted from cache. Refresh once so the
            public site picks up the latest published edit. We use a
-           query param to dodge browser bf-cache. */
+           query param to dodge browser bf-cache. We DON'T auto-reload
+           when embedded in an iframe (the admin preview), because that
+           races with the parent's just-written cache + pending PUT —
+           the parent will reload us when needed. */
         var u = new URL(window.location.href);
         u.searchParams.set("_v", String(Date.now()));
         window.location.replace(u.toString());

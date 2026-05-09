@@ -132,6 +132,15 @@
     if (!A || !B) return a;
     return rgbToHex(A.r + (B.r - A.r) * t, A.g + (B.g - A.g) * t, A.b + (B.b - A.b) * t);
   }
+  function relativeLuminance(hex) {
+    const c = hexToRgb(hex);
+    if (!c) return 0;
+    const norm = [c.r, c.g, c.b]
+      .map((v) => v / 255)
+      .map((v) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)));
+    return 0.2126 * norm[0] + 0.7152 * norm[1] + 0.0722 * norm[2];
+  }
+
   function applyTheme() {
     const t = DATA.theme;
     if (!t || !t.bg || !t.ink) return;       /* CSS defaults stand */
@@ -151,6 +160,11 @@
     /* Primary CTA / hover accent — same family as ink. */
     root.style.setProperty("--maroon",    ink);
     root.style.setProperty("--maroon-dk", mixColor(ink, "#000000", 0.20));
+    /* CTA-text — chosen for contrast against the accent. Dark accents
+       get white text; light accents (e.g. champagne accent on a dark
+       palette) get near-black text. WCAG-style luminance threshold. */
+    const ctaText = relativeLuminance(ink) > 0.55 ? "#1A1410" : "#FFFFFF";
+    root.style.setProperty("--cta-text", ctaText);
     /* Rules & form fields — translucent ink, opacities preserved. */
     root.style.setProperty("--rule",      `rgba(${inkRgb.r}, ${inkRgb.g}, ${inkRgb.b}, 0.14)`);
     root.style.setProperty("--rule-soft", `rgba(${inkRgb.r}, ${inkRgb.g}, ${inkRgb.b}, 0.07)`);
@@ -427,12 +441,29 @@
             <label class="form__label" for="f-referral">How did you hear about us</label>
             <input class="form__input" id="f-referral" name="referral" type="text" placeholder="Instagram, a friend, a publication…">
           </div>
+          <!-- Honeypot field — invisible to humans, irresistible to bots.
+               If this is filled when the form is submitted, the server
+               silently drops the request as spam. -->
+          <div class="form__honeypot" aria-hidden="true">
+            <label>Website (leave blank)
+              <input type="text" name="_hp" tabindex="-1" autocomplete="off">
+            </label>
+          </div>
+
           <div class="form__actions">
             <p class="form__note">We reply to every enquiry within 48 hours. All conversations are confidential.</p>
-            <button class="form__submit" type="submit" id="formSubmit">
-              <span id="submitText">Send Enquiry</span>
-              <span class="arrow"></span>
-            </button>
+            <div class="form__btns">
+              <button class="form__submit" type="submit" id="formSubmit">
+                <span id="submitText">Send Enquiry</span>
+                <span class="arrow"></span>
+              </button>
+              ${c.whatsapp ? `
+                <button type="button" class="btn-whatsapp" id="whatsappBtn" aria-label="Chat on WhatsApp">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51l-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0 0 20.464 3.488"/></svg>
+                  <span>Chat on WhatsApp</span>
+                </button>
+              ` : ""}
+            </div>
           </div>
 
           <div class="form__success" role="status" aria-live="polite">
@@ -566,7 +597,7 @@
     });
   }
 
-  /* ── 11. Contact form (Formspree → mailto fallback) ───────────────── */
+  /* ── 11. Contact form (/api/enquire → Formspree → mailto fallback) ─ */
   function setupContactForm() {
     const form = $("#contactForm");
     if (!form) return;
@@ -577,10 +608,46 @@
     const c = DATA.contact || {};
     const action = (c.formAction || "").trim();
 
+    /* WhatsApp button — opens wa.me with current form values prefilled.
+       Build the message at click-time so any fields the visitor has
+       already typed are included. The visitor still has to press Send
+       in WhatsApp itself. */
+    const waBtn = $("#whatsappBtn");
+    if (waBtn) {
+      waBtn.addEventListener("click", () => {
+        const phone = (c.whatsapp || "").replace(/\D/g, "");
+        if (!phone) return;
+        const fd = new FormData(form);
+        const name    = (fd.get("name")    || "").toString().trim();
+        const email   = (fd.get("email")   || "").toString().trim();
+        const venue   = (fd.get("venue")   || "").toString().trim();
+        const phoneIn = (fd.get("phone")   || "").toString().trim();
+        const message = (fd.get("message") || "").toString().trim();
+        const dateStart = (fd.get("weddingDateStart") || "").toString();
+        const dateEnd   = (fd.get("weddingDateEnd")   || "").toString();
+        let dateLine = "";
+        if (dateStart && dateEnd && dateStart !== dateEnd) dateLine = `${dateStart} → ${dateEnd}`;
+        else if (dateStart || dateEnd)                     dateLine = dateStart || dateEnd;
+
+        let lines = [`Hi! I'd like to enquire about wedding photography.`];
+        if (name)     lines.push("", `Name: ${name}`);
+        if (email)    lines.push(`Email: ${email}`);
+        if (phoneIn)  lines.push(`Phone: ${phoneIn}`);
+        if (dateLine) lines.push(`Wedding: ${dateLine}`);
+        if (venue)    lines.push(`Venue: ${venue}`);
+        if (message)  lines.push("", message);
+        const text = lines.join("\n");
+        const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+        window.open(url, "_blank", "noopener");
+      });
+    }
+
     function showError(msg) {
       submitTxt.textContent = msg;
-      submitBtn.style.background = "#1B3A30";
-      submitBtn.style.borderColor = "#1B3A30";
+      /* Fixed red so the error reads regardless of the user's theme
+         (the brand accent could itself be a green/blue/etc.). */
+      submitBtn.style.background = "#A8362F";
+      submitBtn.style.borderColor = "#A8362F";
       setTimeout(() => {
         submitTxt.textContent = "Send Enquiry";
         submitBtn.style.background = "";
@@ -611,7 +678,47 @@
       submitBtn.disabled = true;
       submitTxt.textContent = "Sending…";
 
-      /* If a real Formspree (or compatible POST) endpoint is configured, use it */
+      const dateStart = (fd.get("weddingDateStart") || "").toString();
+      const dateEnd   = (fd.get("weddingDateEnd")   || "").toString();
+
+      /* Step 1: try /api/enquire (Telegram bridge). This is the
+         preferred path on the deployed site — instant delivery to the
+         photographer's Telegram, no Formspree needed. */
+      try {
+        const res = await fetch("/api/enquire", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            name, email, message,
+            phone:   fd.get("phone")    || "",
+            venue:   fd.get("venue")    || "",
+            referral: fd.get("referral") || "",
+            weddingDateStart: dateStart,
+            weddingDateEnd:   dateEnd,
+            _hp: fd.get("_hp") || "",   /* honeypot passthrough */
+          }),
+        });
+        if (res.ok) {
+          successTitle.textContent = "Sent.";
+          showSuccess();
+          return;
+        }
+        /* Server-side validation failure (4xx) — show the message; don't
+           silently fall back, so the user can correct the input. */
+        if (res.status >= 400 && res.status < 500) {
+          const info = await res.json().catch(() => ({}));
+          showError(info.error || "Couldn't send — please check your details");
+          return;
+        }
+        /* 500/502: server misconfigured (e.g. TELEGRAM_*not set) or
+           Telegram unreachable. Fall through to other transports. */
+      } catch (_) {
+        /* Network error or /api/enquire doesn't exist (e.g. previewing
+           on a host without Netlify Functions). Fall through. */
+      }
+
+      /* Step 2: if a Formspree (or compatible) endpoint is configured,
+         use it. Backwards compat for users who set this in admin. */
       if (action && /^https?:\/\//.test(action)) {
         try {
           const res = await fetch(action, {
@@ -622,22 +729,18 @@
           if (res.ok) {
             successTitle.textContent = "Sent.";
             showSuccess();
-          } else {
-            const data = await res.json().catch(() => ({}));
-            showError(data?.errors?.[0]?.message || "Send failed — please email us instead");
+            return;
           }
-        } catch (_) {
-          showError("Network error — please try again");
-        }
-        return;
+          const data = await res.json().catch(() => ({}));
+          showError(data?.errors?.[0]?.message || "Send failed — please email us instead");
+          return;
+        } catch (_) { /* fall through to mailto */ }
       }
 
-      /* Fallback: open the user's email client with a prefilled message */
+      /* Step 3: open the user's email client with a prefilled message. */
       const to = c.email || "";
-      if (!to) { showError("No email configured"); return; }
+      if (!to) { showError("Couldn't reach the server. Please email us directly."); return; }
       const subject = `Wedding enquiry · ${name}`;
-      const dateStart = (fd.get("weddingDateStart") || "").toString();
-      const dateEnd   = (fd.get("weddingDateEnd")   || "").toString();
       let dateLine = "—";
       if (dateStart && dateEnd && dateStart !== dateEnd) dateLine = `${dateStart} → ${dateEnd}`;
       else if (dateStart || dateEnd)                     dateLine = dateStart || dateEnd;
@@ -717,91 +820,13 @@
     });
   }
 
-  /* ── 12b. Auto-swap — disabled.
-     The original design had a fixed 4×2 grid where cards all shared a
-     4:5 aspect ratio, so swapping images between cells was visually
-     seamless. With the new Pinterest-style masonry every photo keeps
-     its natural aspect, and swapping mismatched ratios would reflow
-     the column on every tick. We keep the function shell so the
-     boot() call is a no-op rather than removed. */
-  function setupAutoSwap() {
-    return;
-    /* eslint-disable */
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    (DATA.sections || []).forEach((section, sIdx) => {
-      const story = $(`#story-${section.id || sIdx}`);
-      if (!story) return;
-      const cards = $$(".card", story);
-      if (cards.length < 2) return;
-
-      const preload = (img, src, cb) => {
-        const sameSrc = img.src && (img.src === src || img.src.endsWith(src.split("/").pop().split("?")[0]));
-        if (sameSrc && img.complete && img.naturalWidth > 0) { cb(); return; }
-        img.onload  = () => { img.onload = null; img.onerror = null; cb(); };
-        img.onerror = () => { img.onload = null; img.onerror = null; cb(); };
-        img.src = src;
-      };
-
-      const swapPair = (cardA, cardB) => {
-        const aFront = cardA.querySelector(".card__img:not(.is-back)");
-        const aBack  = cardA.querySelector(".card__img.is-back");
-        const bFront = cardB.querySelector(".card__img:not(.is-back)");
-        const bBack  = cardB.querySelector(".card__img.is-back");
-        if (!aFront || !aBack || !bFront || !bBack) return;
-
-        const aSrc = aFront.currentSrc || aFront.src;
-        const bSrc = bFront.currentSrc || bFront.src;
-        if (!aSrc || !bSrc || aSrc === bSrc) return;
-
-        let ready = 0;
-        const goTime = () => {
-          if (++ready < 2) return;
-          /* Both backs preloaded — flip simultaneously, both cards cross-
-             fade together over the 2s CSS opacity transition. */
-          aFront.classList.add("is-back");    aBack.classList.remove("is-back");
-          bFront.classList.add("is-back");    bBack.classList.remove("is-back");
-          cardA.dataset.src = bSrc;           /* keep lightbox accurate */
-          cardB.dataset.src = aSrc;
-        };
-        preload(aBack, bSrc, goTime);
-        preload(bBack, aSrc, goTime);
-      };
-
-      /* The big card is always cards[0] (CSS rule .gallery .card:first-child).
-         We cycle through the small cards in shuffled order so every small
-         cell gets a fair turn at being swapped with the big one — and then
-         we re-shuffle so the rotation never looks mechanical. */
-      const buildOrder = () => {
-        const o = [];
-        for (let i = 1; i < cards.length; i++) o.push(i);
-        for (let i = o.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [o[i], o[j]] = [o[j], o[i]];
-        }
-        return o;
-      };
-      let order = buildOrder();
-      let cursor = 0;
-
-      function tick() {
-        if (document.hidden) return;
-        const big = cards[0];
-        if (!big) return;
-        if (cursor >= order.length) { order = buildOrder(); cursor = 0; }
-        const small = cards[order[cursor++]];
-        if (!small) return;
-        swapPair(big, small);
-      }
-
-      /* Stagger sections so they don't all swap on the same beat. */
-      const initialDelay = 1800 + Math.random() * 2400;
-      setTimeout(() => {
-        tick();
-        setInterval(tick, 3000);
-      }, initialDelay);
-    });
-  }
+  /* ── 12b. Auto-swap — removed.
+     The original 4-col grid had every card at 4:5 aspect, so swapping
+     images between cells was visually seamless. With the new Pinterest
+     masonry, each photo holds its natural aspect, so swapping would
+     reflow the column on every tick. The boot() call to setupAutoSwap
+     is a no-op now. */
+  function setupAutoSwap() { /* intentionally no-op */ }
 
   /* ── 13. Lenis smooth scroll ──────────────────────────────────────── */
   function setupSmoothScroll() {

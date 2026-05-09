@@ -577,6 +577,7 @@ window.SRIDHA_DATA = {
     "phone": "+91 00000 00000",
     "instagram": "@theweddingsridha",
     "location": "Based in India · Travels worldwide",
+    "whatsapp": "918109705662",
     "formAction": "",
     "successMessage": "Thank you. Your enquiry is on its way — we'll be in touch within 48 hours.",
     "footerLine": "© The Wedding Sridha — heirloom photography"
