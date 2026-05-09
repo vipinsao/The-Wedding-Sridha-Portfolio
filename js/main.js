@@ -551,21 +551,35 @@
     instagram: `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.16c3.2 0 3.58.012 4.85.07 1.17.054 1.8.249 2.23.413a3.72 3.72 0 0 1 1.38.896c.42.42.68.819.896 1.38.164.43.36 1.06.413 2.23.058 1.27.07 1.65.07 4.85s-.012 3.58-.07 4.85c-.054 1.17-.249 1.8-.413 2.23a3.72 3.72 0 0 1-.896 1.38c-.42.42-.819.68-1.38.896-.43.164-1.06.36-2.23.413-1.27.058-1.65.07-4.85.07s-3.58-.012-4.85-.07c-1.17-.054-1.8-.249-2.23-.413a3.72 3.72 0 0 1-1.38-.896 3.72 3.72 0 0 1-.896-1.38c-.164-.43-.36-1.06-.413-2.23C2.172 15.58 2.16 15.2 2.16 12s.012-3.58.07-4.85c.054-1.17.249-1.8.413-2.23a3.72 3.72 0 0 1 .896-1.38 3.72 3.72 0 0 1 1.38-.896c.43-.164 1.06-.36 2.23-.413C8.42 2.172 8.8 2.16 12 2.16zm0-2.16C8.74 0 8.33.014 7.05.072 5.78.13 4.9.32 4.14.62a5.91 5.91 0 0 0-2.13 1.39A5.91 5.91 0 0 0 .62 4.14C.32 4.9.13 5.78.072 7.05.014 8.33 0 8.74 0 12s.014 3.67.072 4.95c.058 1.27.248 2.15.548 2.91.31.79.726 1.46 1.39 2.13a5.91 5.91 0 0 0 2.13 1.39c.76.3 1.64.49 2.91.548C8.33 23.986 8.74 24 12 24s3.67-.014 4.95-.072c1.27-.058 2.15-.248 2.91-.548a5.91 5.91 0 0 0 2.13-1.39 5.91 5.91 0 0 0 1.39-2.13c.3-.76.49-1.64.548-2.91.058-1.28.072-1.69.072-4.95s-.014-3.67-.072-4.95c-.058-1.27-.248-2.15-.548-2.91a5.91 5.91 0 0 0-1.39-2.13A5.91 5.91 0 0 0 19.86.62C19.1.32 18.22.13 16.95.072 15.67.014 15.26 0 12 0zm0 5.84a6.16 6.16 0 1 0 0 12.32 6.16 6.16 0 0 0 0-12.32zm0 10.16A4 4 0 1 1 12 8a4 4 0 0 1 0 8zm6.41-11.85a1.44 1.44 0 1 0 0 2.88 1.44 1.44 0 0 0 0-2.88z"/></svg>`,
     youtube:   `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3.02 3.02 0 0 0-2.13-2.13C19.46 3.5 12 3.5 12 3.5s-7.46 0-9.37.57A3.02 3.02 0 0 0 .5 6.2C0 8.13 0 12 0 12s0 3.87.5 5.8a3.02 3.02 0 0 0 2.13 2.13C4.54 20.5 12 20.5 12 20.5s7.46 0 9.37-.57a3.02 3.02 0 0 0 2.13-2.13C24 15.87 24 12 24 12s0-3.87-.5-5.8zM9.6 15.6V8.4l6.24 3.6-6.24 3.6z"/></svg>`,
     facebook:  `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M24 12c0-6.63-5.37-12-12-12S0 5.37 0 12c0 5.99 4.39 10.96 10.13 11.85V15.47H7.08V12h3.05V9.36c0-3.01 1.79-4.67 4.53-4.67 1.31 0 2.69.23 2.69.23v2.96h-1.51c-1.49 0-1.96.93-1.96 1.88V12h3.33l-.53 3.47h-2.8v8.38C19.61 22.96 24 17.99 24 12z"/></svg>`,
+    /* X (formerly Twitter) — current bird-less wordmark glyph. */
+    x:         `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.65l-5.21-6.832L4.99 21.75H1.68l7.73-8.835L1.254 2.25h6.817l4.71 6.231 5.463-6.231zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>`,
+    /* Telegram — paper plane. */
+    telegram:  `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>`,
+    /* Email — envelope. */
+    email:     `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6zm-2 0l-8 5-8-5h16zm0 12H4V8l8 5 8-5v10z"/></svg>`,
   };
 
   /* Normalize a stored social handle/URL into a real link. Accepts:
        - full URL ("https://instagram.com/foo")
        - @handle ("@foo")
-       - bare username ("foo") */
+       - bare username ("foo")
+       - email address (for the email icon — auto-prefixed with mailto:) */
   function socialUrl(platform, value) {
     if (!value) return "";
     const v = String(value).trim();
     if (!v) return "";
+    if (platform === "email") {
+      if (/^mailto:/i.test(v)) return v;
+      if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) return `mailto:${v}`;
+      return "";
+    }
     if (/^https?:\/\//i.test(v)) return v;
     const handle = v.replace(/^@/, "").replace(/\/$/, "");
     if (platform === "instagram") return `https://instagram.com/${handle}`;
     if (platform === "youtube")   return `https://youtube.com/${/^@/.test(v) ? v : "@" + handle}`;
     if (platform === "facebook")  return `https://facebook.com/${handle}`;
+    if (platform === "x" || platform === "twitter") return `https://x.com/${handle}`;
+    if (platform === "telegram")  return `https://t.me/${handle}`;
     return v;
   }
 
@@ -576,20 +590,25 @@
     const year = new Date().getFullYear();
     const brandName = (DATA.brand && DATA.brand.name) || "The Wedding Sridha";
 
-    const igUrl = socialUrl("instagram", c.instagram);
-    const ytUrl = socialUrl("youtube",   c.youtube);
-    const fbUrl = socialUrl("facebook",  c.facebook);
-
-    const social = (label, url, key) => url
-      ? `<a class="footer__social" href="${escapeHtml(url)}" target="_blank" rel="noopener" aria-label="${escapeHtml(label)}">${SOCIAL_ICONS[key]}</a>`
-      : "";
+    /* Six supported platforms — admin can fill any subset. Empty fields
+       silently drop their icon. Order: visual social first (IG, FB,
+       X, YouTube), then conversational (Telegram), then email last. */
+    const platforms = [
+      { key: "instagram", label: "Instagram", url: socialUrl("instagram", c.instagram) },
+      { key: "facebook",  label: "Facebook",  url: socialUrl("facebook",  c.facebook)  },
+      { key: "x",         label: "X",         url: socialUrl("x",         c.x || c.twitter) },
+      { key: "youtube",   label: "YouTube",   url: socialUrl("youtube",   c.youtube)   },
+      { key: "telegram",  label: "Telegram",  url: socialUrl("telegram",  c.telegram)  },
+      { key: "email",     label: "Email",     url: socialUrl("email",     c.email)     },
+    ];
+    const icons = platforms
+      .filter((p) => p.url)
+      .map((p) =>
+        `<a class="footer__social" href="${escapeHtml(p.url)}" ${p.key === "email" ? "" : `target="_blank" rel="noopener"`} aria-label="${escapeHtml(p.label)}">${SOCIAL_ICONS[p.key]}</a>`
+      ).join("");
 
     root.innerHTML = `
-      <div class="footer__socials">
-        ${social("Instagram", igUrl, "instagram")}
-        ${social("YouTube",   ytUrl, "youtube")}
-        ${social("Facebook",  fbUrl, "facebook")}
-      </div>
+      <div class="footer__socials">${icons}</div>
       <div class="footer__copyright">${escapeHtml(brandName)} <span>©</span> ${year}</div>
     `;
   }

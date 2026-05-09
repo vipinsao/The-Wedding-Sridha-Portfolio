@@ -806,6 +806,10 @@ images/haldi/02.jpg"></textarea>
         field("YouTube (URL or @handle)", "contact.youtube", c.youtube, { placeholder: "@yourchannel" }),
         field("Facebook (URL or page name)", "contact.facebook", c.facebook, { placeholder: "yourpage" })
       )}
+      ${row(
+        field("X / Twitter (URL or handle)", "contact.x", c.x || c.twitter, { placeholder: "@SridhaWeds" }),
+        field("Telegram (URL or @handle)", "contact.telegram", c.telegram, { placeholder: "@yourname" })
+      )}
       ${field("WhatsApp number (country code + digits, no spaces)", "contact.whatsapp", c.whatsapp, {
         placeholder: "919876543210"
       })}
