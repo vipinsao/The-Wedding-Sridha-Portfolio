@@ -21,6 +21,19 @@ window.SRIDHA_DATA = {
     "signature": "— S.",
     "photo": "images/about.jpeg"
   },
+  "team": {
+    "eyebrow": "Meet the team",
+    "title": "The photographers behind the lens",
+    "body": "A small, devoted team that arrives at every wedding as a single rhythm — quietly, attentively, with eight years of shared instinct between us.",
+    "members": [
+      {
+        "photo": "images/about.jpeg",
+        "name": "Takeshwar Dewangan",
+        "role": "Lead Photographer",
+        "bio": "Eight years, more than ninety weddings, and an unshakeable preference for unposed moments. Believes every wedding holds many small worlds — and his job is to find them."
+      }
+    ]
+  },
   "storiesIntro": {
     "eyebrow": "The Work",
     "title": "Seven small worlds, one wedding.",

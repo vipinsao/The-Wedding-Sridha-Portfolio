@@ -230,6 +230,92 @@ body.has-cursor .cursor { display: block; }
 
 .topnav {
   display: flex; gap: 28px; align-items: center;
+  position: relative;
+}
+
+/* Stories ▾ dropdown — hover-reveal on desktop, click-toggle on touch
+   (.is-open class is added by JS for touch). */
+.topnav__group {
+  position: relative;
+}
+.topnav__trigger {
+  display: inline-flex; align-items: center; gap: 4px;
+  cursor: pointer;
+}
+.topnav__caret {
+  font-size: 10px;
+  margin-top: 1px;
+  transition: transform 0.3s var(--ease);
+  display: inline-block;
+}
+.topnav__group:hover .topnav__caret,
+.topnav__group.is-open .topnav__caret { transform: rotate(180deg); }
+
+.topnav__dropdown {
+  list-style: none;
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  min-width: 220px;
+  background: rgba(225, 213, 193, 0.98);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 8px;
+  margin: 0;
+  box-shadow: 0 14px 40px -18px rgba(20, 36, 29, 0.4);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.25s var(--ease), transform 0.25s var(--ease), visibility 0s linear 0.25s;
+  z-index: 10;
+}
+.topnav__group:hover .topnav__dropdown,
+.topnav__group.is-open .topnav__dropdown {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition-delay: 0s;
+}
+.topnav__dropdown li { margin: 0; }
+.topnav__dropdown a {
+  display: flex; align-items: baseline; gap: 12px;
+  padding: 9px 12px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--ink-soft);
+  border-radius: 6px;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.topnav__dropdown a::after { display: none; }
+.topnav__dropdown a:hover {
+  background: rgba(20, 36, 29, 0.06);
+  color: var(--maroon);
+}
+.topnav__dropdown-num {
+  font-family: var(--f-sans);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+  flex: 0 0 auto;
+}
+.topnav__dropdown-title {
+  font-family: var(--f-serif);
+  font-style: italic;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--ink);
+  font-weight: 400;
+}
+/* Over the dark hero, the dropdown stays light-on-light so links remain
+   readable. We only switch the trigger colour, not the panel itself. */
+.topbar.is-light .topnav__dropdown {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(20, 36, 29, 0.10);
 }
 .topnav a {
   font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase;
@@ -484,6 +570,98 @@ body.has-cursor .cursor { display: block; }
   font-size: 22px;
   color: var(--maroon);
   margin-top: 8px;
+}
+
+/* ── Team / "Meet the photographers" ────────────────────────────────── */
+.team {
+  background: var(--bg);
+}
+.team__inner {
+  max-width: 1280px; margin: 0 auto;
+}
+.team__title {
+  font-family: var(--f-serif);
+  font-weight: 400;
+  font-size: clamp(36px, 4.4vw, 60px);
+  line-height: 1.05;
+  color: var(--ink);
+  margin-top: 18px;
+}
+.team__lede {
+  font-family: var(--f-serif);
+  font-style: italic;
+  font-size: clamp(17px, 1.5vw, 21px);
+  color: var(--ink-soft);
+  margin-top: 20px;
+  line-height: 1.55;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.team__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(28px, 3vw, 48px);
+  margin-top: 48px;
+}
+.team__card {
+  display: flex; flex-direction: column;
+}
+.team__photo {
+  position: relative;
+  aspect-ratio: 4/5;
+  background: var(--bg-deep);
+  overflow: hidden;
+  border-radius: 18px;
+  box-shadow: 0 22px 50px -30px rgba(20, 36, 29, 0.4);
+}
+.team__photo img {
+  width: 100%; height: 100%; object-fit: cover;
+  filter: saturate(0.94) contrast(1.04);
+  transition: transform 0.6s var(--ease);
+}
+.team__card:hover .team__photo img { transform: scale(1.04); }
+.team__photo--empty {
+  background: linear-gradient(135deg, var(--bg-deep), var(--bg-alt));
+}
+.team__card.is-broken .team__photo {
+  background: linear-gradient(135deg, var(--bg-deep), var(--bg-alt));
+}
+.team__card.is-broken .team__photo img { display: none; }
+.team__body { padding: 22px 4px 0; }
+.team__name {
+  font-family: var(--f-serif);
+  font-weight: 400;
+  font-size: clamp(22px, 1.9vw, 28px);
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  line-height: 1.15;
+}
+.team__role {
+  font-family: var(--f-sans);
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-weight: 500;
+  margin-top: 8px;
+}
+.team__bio {
+  font-family: var(--f-sans);
+  font-size: 14.5px;
+  color: var(--ink-soft);
+  line-height: 1.65;
+  margin-top: 14px;
+}
+
+@media (max-width: 1100px) {
+  .team__grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .team__grid { grid-template-columns: 1fr; gap: 32px; }
+  .team__photo { max-width: 360px; }
+  .team__card { align-items: stretch; }
+  .team__body { text-align: left; }
 }
 
 /* ── Stories intro ──────────────────────────────────────────────────── */

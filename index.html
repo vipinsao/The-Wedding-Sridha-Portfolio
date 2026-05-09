@@ -76,8 +76,14 @@
       <span>the wedding</span> <b>Sridha</b>
     </a>
     <nav class="topnav" aria-label="Primary">
-      <a href="#stories">Stories</a>
+      <div class="topnav__group" data-dropdown>
+        <a href="#stories" class="topnav__trigger" aria-haspopup="true" aria-expanded="false">
+          Stories <span class="topnav__caret" aria-hidden="true">▾</span>
+        </a>
+        <ul class="topnav__dropdown" id="storiesDropdown" role="menu" aria-label="Jump to a story"></ul>
+      </div>
       <a href="#about">About</a>
+      <a href="#team">Team</a>
       <a href="#faq">FAQ</a>
       <a href="#contact" class="topnav__cta">Enquire</a>
     </nav>
@@ -90,6 +96,9 @@
 
     <!-- About -->
     <section id="about" class="section about" data-render="about" aria-label="About the photographer"></section>
+
+    <!-- Meet the photographers (team) -->
+    <section id="team" class="section team" data-render="team" aria-label="Meet the photographers"></section>
 
     <!-- Stories introduction -->
     <section id="stories" class="section stories-intro" data-render="storiesIntro" aria-label="The stories"></section>

@@ -259,6 +259,95 @@
     `;
   }
 
+  /* Populate the "Stories ▾" dropdown in the topnav with one link per
+     section in DATA.sections. Kept dynamic so admin edits reflect here
+     automatically without HTML changes. */
+  function renderStoriesDropdown() {
+    const ul = $("#storiesDropdown");
+    if (!ul) return;
+    const sections = DATA.sections || [];
+    if (sections.length === 0) { ul.innerHTML = ""; return; }
+    ul.innerHTML = sections.map((s, idx) => {
+      const id    = escapeHtml(s.id || `section-${idx}`);
+      const title = escapeHtml(s.title || s.id || "Untitled");
+      const num   = escapeHtml(s.number || String(idx + 1).padStart(2, "0"));
+      return `<li role="none">
+        <a role="menuitem" href="#story-${id}">
+          <span class="topnav__dropdown-num">${num}</span>
+          <span class="topnav__dropdown-title">${title}</span>
+        </a>
+      </li>`;
+    }).join("");
+  }
+
+  /* Wire dropdown open/close behaviour. Hover-on-desktop is handled
+     by CSS; we only need JS for click/touch toggling. */
+  function setupDropdown() {
+    const groups = $$(".topnav__group[data-dropdown]");
+    groups.forEach((g) => {
+      const trigger = g.querySelector(".topnav__trigger");
+      if (!trigger) return;
+      trigger.addEventListener("click", (e) => {
+        /* Only intercept on touch / narrow viewports — desktop hover
+           still works without click. */
+        if (!window.matchMedia("(pointer: coarse), (max-width: 900px)").matches) return;
+        e.preventDefault();
+        const open = g.classList.toggle("is-open");
+        trigger.setAttribute("aria-expanded", open ? "true" : "false");
+      });
+    });
+    /* Close any open dropdown on outside click. */
+    document.addEventListener("click", (e) => {
+      groups.forEach((g) => {
+        if (!g.contains(e.target)) {
+          g.classList.remove("is-open");
+          const tr = g.querySelector(".topnav__trigger");
+          if (tr) tr.setAttribute("aria-expanded", "false");
+        }
+      });
+    });
+  }
+
+  /* Meet-the-photographers section. Renders a card per team member —
+     photo on top, name + role + short bio below. Hides itself entirely
+     if no members are configured (so admin can leave it empty without
+     showing a blank section). */
+  function renderTeam() {
+    const root = $('[data-render="team"]');
+    if (!root) return;
+    const t = DATA.team || {};
+    const members = (t.members || []).filter((m) => m && (m.name || m.photo));
+    if (members.length === 0) { root.style.display = "none"; return; }
+    root.style.display = "";
+
+    const cards = members.map((m, i) => {
+      const photoSrc = normalizeImageUrl(m.photo || "");
+      const photo = photoSrc
+        ? `<div class="team__photo"><img src="${escapeHtml(photoSrc)}" alt="${escapeHtml(m.name || "Photographer")}" loading="lazy" decoding="async" onerror="this.closest('.team__card').classList.add('is-broken')"></div>`
+        : `<div class="team__photo team__photo--empty"></div>`;
+      return `
+        <article class="team__card reveal" data-delay="${Math.min(i, 4)}">
+          ${photo}
+          <div class="team__body">
+            <h3 class="team__name">${escapeHtml(m.name || "")}</h3>
+            ${m.role ? `<p class="team__role">${escapeHtml(m.role)}</p>` : ""}
+            ${m.bio  ? `<p class="team__bio">${escapeHtml(m.bio)}</p>`   : ""}
+          </div>
+        </article>`;
+    }).join("");
+
+    root.innerHTML = `
+      <div class="team__inner">
+        <div class="section__head section__head--center">
+          <p class="eyebrow reveal">${escapeHtml(t.eyebrow || "Meet the team")}</p>
+          <h2 class="team__title reveal" data-delay="1">${escapeHtml(t.title || "The photographers")}</h2>
+          ${t.body ? `<p class="team__lede reveal" data-delay="2">${escapeHtml(t.body)}</p>` : ""}
+        </div>
+        <div class="team__grid">${cards}</div>
+      </div>
+    `;
+  }
+
   function renderStoriesIntro() {
     const root = $('[data-render="storiesIntro"]');
     if (!root) return;
@@ -495,8 +584,10 @@
   function renderAll() {
     renderHero();
     renderAbout();
+    renderTeam();
     renderStoriesIntro();
     renderStories();
+    renderStoriesDropdown();   /* topnav links — depends on DATA.sections */
     renderTestimonials();
     renderPress();
     renderFaq();
@@ -884,6 +975,7 @@
     renderAll();
     setupCursor();
     setupTopbar();
+    setupDropdown();
     setupReveals();
     setupGalleries();
     setupFaq();

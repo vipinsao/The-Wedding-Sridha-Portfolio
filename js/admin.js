@@ -672,6 +672,77 @@ images/haldi/02.jpg"></textarea>
       </div>`;
   }
 
+  /* Meet-the-photographers admin block. Pattern matches testimonials/faq:
+     a list of objects with reordering + delete + add. Each member has a
+     photo (with the upload-first UI), plus name/role/bio. */
+  function renderTeam() {
+    const t = state.team || (state.team = { members: [] });
+    if (!Array.isArray(t.members)) t.members = [];
+    const last = t.members.length - 1;
+    const memberRows = t.members.map((m, i) => {
+      const photo = escapeAttr(m.photo || "");
+      const has   = !!photo;
+      const thumbStyle = has ? `background-image:url('${photo}')` : "";
+      return `
+        <div class="list-item team-member-row" data-list-row="team.members.${i}">
+          <div class="list-item__head">
+            <span class="list-item__num">${String(i + 1).padStart(2, "0")}</span>
+            <div class="list-item__ctrls">
+              <button data-act="up"     title="Move up"    ${i === 0    ? "disabled" : ""}>↑</button>
+              <button data-act="down"   title="Move down"  ${i === last ? "disabled" : ""}>↓</button>
+              <button data-act="remove" title="Remove">×</button>
+            </div>
+          </div>
+          <div class="list-item__body">
+            <div class="image-field" style="margin-bottom:14px;">
+              <label class="field__label">Photo</label>
+              <div class="image-field__inner">
+                <div class="image-field__thumb${has ? "" : " is-empty"}" style="${thumbStyle}">
+                  ${has ? "" : `<span class="image-field__icon">📷</span>`}
+                </div>
+                <div class="image-field__actions">
+                  <button type="button" class="btn--upload-big" data-upload-target="team.members.${i}.photo">
+                    ${has ? "↻ Replace photo" : "↑ Upload photo"}
+                  </button>
+                  <details class="image-field__url-toggle">
+                    <summary>Paste URL instead</summary>
+                    <input class="input" type="url" placeholder="https://… or images/foo.jpg"
+                           data-bind="team.members.${i}.photo" value="${photo}">
+                  </details>
+                </div>
+              </div>
+            </div>
+            <div class="field" style="margin-bottom:8px;">
+              <label class="field__label">Name</label>
+              <input class="input" type="text" data-bind="team.members.${i}.name"
+                     placeholder="Takeshwar Dewangan" value="${escapeAttr(m.name || "")}">
+            </div>
+            <div class="field" style="margin-bottom:8px;">
+              <label class="field__label">Role</label>
+              <input class="input" type="text" data-bind="team.members.${i}.role"
+                     placeholder="Lead Photographer" value="${escapeAttr(m.role || "")}">
+            </div>
+            <div class="field" style="margin-bottom:8px;">
+              <label class="field__label">Bio</label>
+              <textarea class="textarea" data-bind="team.members.${i}.bio" rows="3"
+                        placeholder="A few sentences about this photographer.">${escapeHtml(m.bio || "")}</textarea>
+            </div>
+          </div>
+        </div>`;
+    }).join("");
+    return block("team", "Team", "Meet the photographers", `
+      ${field("Eyebrow", "team.eyebrow", t.eyebrow, { placeholder: "Meet the team" })}
+      ${field("Section title", "team.title", t.title, { placeholder: "The photographers behind the lens" })}
+      ${field("Lede / intro paragraph", "team.body", t.body, { type: "textarea", rows: 2,
+        placeholder: "A small, devoted team that travels together…" })}
+      <label class="field__label" style="margin-top:14px;">Photographers</label>
+      <p class="form__hint" style="margin-bottom:8px;">Add as many people as you like. Each appears as a card on the live site.</p>
+      <div class="list" data-list="team.members">${memberRows}</div>
+      <div class="add-row" data-act="add-list" data-list-path="team.members"
+           data-template='{"photo":"","name":"","role":"","bio":""}'>+ Add photographer</div>
+    `);
+  }
+
   function renderTestimonials() {
     const t = state.testimonials || (state.testimonials = { items: [] });
     const items = (t.items || []).map((it, i) => listObjectRow("testimonials.items", i, it, [
@@ -781,6 +852,7 @@ images/haldi/02.jpg"></textarea>
       renderFonts(),
       renderHero(),
       renderAbout(),
+      renderTeam(),
       renderStoriesIntro(),
       `<div class="card-block__divider">Stories (${count} ${count === 1 ? "section" : "sections"})</div>`,
       sections,
