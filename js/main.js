@@ -308,64 +308,43 @@
     });
   }
 
-  /* Meet-the-photographers section. Renders a card per team member —
-     photo on top, name + role + short bio below. Hides itself entirely
-     if no members are configured (so admin can leave it empty without
-     showing a blank section). */
-  function renderTeam() {
-    const root = $('[data-render="team"]');
+  /* Stories — single parent section with a tab bar and one panel per
+     ritual. Click a tab → that ritual's gallery shows, others hide.
+     Each panel keeps the same "story header + photo grid" layout it
+     had as a standalone section, so nothing about the photo cards
+     themselves changes. The Stories ▾ topnav dropdown's links to
+     #story-{id} also activate the right tab via setupTabs(). */
+  function renderStories() {
+    const root = $('[data-render="stories"]');
     if (!root) return;
-    const t = DATA.team || {};
-    const members = (t.members || []).filter((m) => m && (m.name || m.photo));
-    if (members.length === 0) { root.style.display = "none"; return; }
-    root.style.display = "";
+    const intro = DATA.storiesIntro || {};
+    const sections = DATA.sections || [];
 
-    const cards = members.map((m, i) => {
-      const photoSrc = normalizeImageUrl(m.photo || "");
-      const photo = photoSrc
-        ? `<div class="team__photo"><img src="${escapeHtml(photoSrc)}" alt="${escapeHtml(m.name || "Photographer")}" loading="lazy" decoding="async" onerror="this.closest('.team__card').classList.add('is-broken')"></div>`
-        : `<div class="team__photo team__photo--empty"></div>`;
+    if (sections.length === 0) {
+      root.innerHTML = `
+        <div class="section__head section__head--center">
+          <p class="eyebrow reveal">${escapeHtml(intro.eyebrow || "The Work")}</p>
+          <h2 class="stories-intro__title reveal" data-delay="1">${escapeHtml(intro.title || "")}</h2>
+          <p class="stories-intro__body reveal" data-delay="2">${escapeHtml(intro.body || "")}</p>
+        </div>`;
+      return;
+    }
+
+    const tabs = sections.map((s, idx) => {
+      const id = escapeHtml(s.id || `section-${idx}`);
+      const num = escapeHtml(s.number || String(idx + 1).padStart(2, "0"));
+      const title = escapeHtml(s.title || s.id || "");
       return `
-        <article class="team__card reveal" data-delay="${Math.min(i, 4)}">
-          ${photo}
-          <div class="team__body">
-            <h3 class="team__name">${escapeHtml(m.name || "")}</h3>
-            ${m.role ? `<p class="team__role">${escapeHtml(m.role)}</p>` : ""}
-            ${m.bio  ? `<p class="team__bio">${escapeHtml(m.bio)}</p>`   : ""}
-          </div>
-        </article>`;
+        <button class="stories__tab" role="tab"
+                data-tab="${id}" aria-controls="story-${id}"
+                aria-selected="${idx === 0 ? "true" : "false"}"
+                tabindex="${idx === 0 ? "0" : "-1"}">
+          <span class="stories__tab-num">${num}</span>
+          <span class="stories__tab-title">${title}</span>
+        </button>`;
     }).join("");
 
-    root.innerHTML = `
-      <div class="team__inner">
-        <div class="section__head section__head--center">
-          <p class="eyebrow reveal">${escapeHtml(t.eyebrow || "Meet the team")}</p>
-          <h2 class="team__title reveal" data-delay="1">${escapeHtml(t.title || "The photographers")}</h2>
-          ${t.body ? `<p class="team__lede reveal" data-delay="2">${escapeHtml(t.body)}</p>` : ""}
-        </div>
-        <div class="team__grid">${cards}</div>
-      </div>
-    `;
-  }
-
-  function renderStoriesIntro() {
-    const root = $('[data-render="storiesIntro"]');
-    if (!root) return;
-    const s = DATA.storiesIntro || {};
-    root.innerHTML = `
-      <div class="section__head section__head--center">
-        <p class="eyebrow reveal">${escapeHtml(s.eyebrow || "The Work")}</p>
-        <h2 class="stories-intro__title reveal" data-delay="1">${escapeHtml(s.title || "")}</h2>
-        <p class="stories-intro__body reveal" data-delay="2">${escapeHtml(s.body || "")}</p>
-      </div>
-    `;
-  }
-
-  function renderStories() {
-    const root = $("#storiesList");
-    if (!root) return;
-    const sections = DATA.sections || [];
-    root.innerHTML = sections.map((s, idx) => {
+    const panels = sections.map((s, idx) => {
       const number = escapeHtml(s.number || String(idx + 1).padStart(2, "0"));
       const photos = (s.photos || []).map((p, i) => {
         const focus = escapeHtml(p.focus || "center");
@@ -387,25 +366,35 @@
             ${p.caption ? `<figcaption class="card__caption">${escapeHtml(p.caption)}</figcaption>` : ""}
           </figure>`;
       }).join("");
-
       const photoCount = (s.photos || []).length;
+      const id = escapeHtml(s.id || `section-${idx}`);
       return `
-        <section class="story" id="story-${escapeHtml(s.id || idx)}" aria-labelledby="story-title-${idx}">
+        <article class="stories__panel${idx === 0 ? " is-active" : ""}"
+                 id="story-${id}" role="tabpanel"
+                 aria-labelledby="story-tab-${id}"
+                 ${idx === 0 ? "" : "hidden"}>
           <div class="story__head">
             <div class="story__title-block">
               <p class="section__num reveal"><span>${number} · The ${escapeHtml(s.title || "")}</span></p>
-              <h3 class="section__title reveal" id="story-title-${idx}" data-delay="1">${escapeHtml(s.title || "")}</h3>
+              <h3 class="section__title reveal" data-delay="1">${escapeHtml(s.title || "")}</h3>
               <p class="section__sub reveal" data-delay="1">${escapeHtml(s.subtitle || "")}</p>
               <p class="section__desc reveal" data-delay="2" style="margin-top:14px;">${escapeHtml(s.description || "")}</p>
             </div>
             <span class="story__count reveal" data-delay="1">${photoCount} ${photoCount === 1 ? "frame" : "frames"}</span>
           </div>
-          <div class="gallery" data-gallery="${escapeHtml(s.id)}">
-            ${photos}
-          </div>
-        </section>
-      `;
+          <div class="gallery" data-gallery="${escapeHtml(s.id)}">${photos}</div>
+        </article>`;
     }).join("");
+
+    root.innerHTML = `
+      <div class="stories__intro section__head section__head--center">
+        <p class="eyebrow reveal">${escapeHtml(intro.eyebrow || "The Work")}</p>
+        <h2 class="stories-intro__title reveal" data-delay="1">${escapeHtml(intro.title || "")}</h2>
+        <p class="stories-intro__body reveal" data-delay="2">${escapeHtml(intro.body || "")}</p>
+      </div>
+      <div class="stories__tabs" role="tablist" aria-label="Story sections">${tabs}</div>
+      <div class="stories__panels">${panels}</div>
+    `;
   }
 
   function renderTestimonials() {
@@ -584,14 +573,12 @@
   function renderAll() {
     renderHero();
     renderAbout();
-    renderTeam();
-    renderStoriesIntro();
     renderStories();
     renderStoriesDropdown();   /* topnav links — depends on DATA.sections */
     renderTestimonials();
     renderPress();
-    renderFaq();
     renderContact();
+    renderFaq();
     renderFooter();
   }
 
@@ -676,6 +663,78 @@
 
   /* ── 9. Galleries are now CSS Grid — no JS scroll handling needed. ── */
   function setupGalleries() { /* intentionally empty (grid layout handles itself) */ }
+
+  /* ── 9b. Stories tabs ─────────────────────────────────────────────────
+     Click a tab → activate its panel, hide others. Also runs when the
+     URL hash changes (e.g. user clicks a Stories ▾ dropdown link to
+     #story-haldi) so the right panel is shown after the smooth scroll
+     lands. */
+  function activateStoryTab(tabId) {
+    if (!tabId) return false;
+    const tabs   = $$(".stories__tab");
+    const panels = $$(".stories__panel");
+    let matched = false;
+    tabs.forEach((tab) => {
+      const on = tab.dataset.tab === tabId;
+      tab.setAttribute("aria-selected", on ? "true" : "false");
+      tab.setAttribute("tabindex", on ? "0" : "-1");
+      tab.classList.toggle("is-active", on);
+      if (on) matched = true;
+    });
+    panels.forEach((panel) => {
+      const on = panel.id === `story-${tabId}`;
+      panel.classList.toggle("is-active", on);
+      if (on) {
+        panel.removeAttribute("hidden");
+        /* Reveals don't re-fire on already-observed elements, so once a
+           panel was hidden when IO ran, its cards never gain `is-in`
+           and stay invisible. Force them visible on tab activation. */
+        $$(".reveal", panel).forEach((el) => el.classList.add("is-in"));
+      } else {
+        panel.setAttribute("hidden", "");
+      }
+    });
+    return matched;
+  }
+
+  function setupTabs() {
+    /* Click handler — delegated so it survives re-renders. */
+    document.addEventListener("click", (e) => {
+      const tab = e.target.closest(".stories__tab");
+      if (!tab) return;
+      e.preventDefault();
+      const id = tab.dataset.tab;
+      activateStoryTab(id);
+      /* Also push the hash so a back-button restores the panel. */
+      try { history.replaceState(null, "", `#story-${id}`); } catch (_) {}
+    });
+
+    /* If the page loaded with #story-{id} in the URL, or the hash
+       changes (dropdown clicks before smooth-scroll), activate that
+       tab. The smooth-scroll handler already takes us to the parent
+       Stories section. */
+    function syncFromHash() {
+      const m = /^#story-([a-zA-Z0-9_-]+)$/.exec(location.hash);
+      if (m) activateStoryTab(m[1]);
+    }
+    syncFromHash();
+    window.addEventListener("hashchange", syncFromHash);
+
+    /* Keyboard navigation — left/right arrows on tabs cycle through. */
+    document.addEventListener("keydown", (e) => {
+      if (!document.activeElement?.classList?.contains("stories__tab")) return;
+      const tabs = $$(".stories__tab");
+      const idx = tabs.indexOf(document.activeElement);
+      if (idx < 0) return;
+      let next = idx;
+      if (e.key === "ArrowRight") next = (idx + 1) % tabs.length;
+      else if (e.key === "ArrowLeft") next = (idx - 1 + tabs.length) % tabs.length;
+      else return;
+      e.preventDefault();
+      tabs[next].focus();
+      tabs[next].click();
+    });
+  }
 
   /* ── 10. FAQ accordion ────────────────────────────────────────────── */
   function setupFaq() {
@@ -978,6 +1037,7 @@
     setupDropdown();
     setupReveals();
     setupGalleries();
+    setupTabs();
     setupFaq();
     setupContactForm();
     setupLightbox();

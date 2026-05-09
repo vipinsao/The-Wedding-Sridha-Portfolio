@@ -852,7 +852,6 @@ images/haldi/02.jpg"></textarea>
       renderFonts(),
       renderHero(),
       renderAbout(),
-      renderTeam(),
       renderStoriesIntro(),
       `<div class="card-block__divider">Stories (${count} ${count === 1 ? "section" : "sections"})</div>`,
       sections,

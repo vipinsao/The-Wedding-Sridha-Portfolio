@@ -687,7 +687,71 @@ body.has-cursor .cursor { display: block; }
   margin-left: auto; margin-right: auto;
 }
 
-/* ── Ritual sections ────────────────────────────────────────────────── */
+/* ── Stories: parent section + tabs + panels ────────────────────────── */
+.stories { background: var(--bg); }
+.stories__intro { margin-bottom: clamp(36px, 5vw, 64px); }
+.stories__tabs {
+  display: flex; gap: 6px;
+  max-width: 1280px; margin: 0 auto clamp(36px, 5vw, 60px);
+  padding: 6px;
+  background: var(--bg-alt);
+  border-radius: 14px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.stories__tabs::-webkit-scrollbar { height: 4px; }
+.stories__tabs::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 2px; }
+.stories__tab {
+  flex: 1 0 auto;
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 14px 18px;
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  font-family: var(--f-sans);
+  cursor: pointer;
+  color: var(--ink-mute);
+  transition: background 0.3s var(--ease), color 0.3s var(--ease), transform 0.2s var(--ease);
+  scroll-snap-align: start;
+  white-space: nowrap;
+}
+.stories__tab:hover { color: var(--ink); background: rgba(20, 36, 29, 0.04); }
+.stories__tab.is-active {
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 6px 20px -10px rgba(20, 36, 29, 0.25), inset 0 0 0 1px var(--rule-soft);
+}
+.stories__tab-num {
+  font-family: var(--f-sans);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  font-weight: 500;
+  color: var(--gold);
+}
+.stories__tab.is-active .stories__tab-num { color: var(--maroon); }
+.stories__tab-title {
+  font-family: var(--f-serif);
+  font-style: italic;
+  font-size: clamp(15px, 1.3vw, 18px);
+  letter-spacing: 0.005em;
+  color: inherit;
+  font-weight: 400;
+}
+
+.stories__panels { position: relative; }
+.stories__panel {
+  display: none;
+  animation: panelFade 0.5s var(--ease);
+}
+.stories__panel.is-active { display: block; }
+@keyframes panelFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Ritual sections (now: a single visible panel) ──────────────────── */
 .story {
   padding-top: clamp(60px, 8vw, 110px);
   padding-bottom: clamp(60px, 8vw, 110px);

@@ -83,7 +83,6 @@
         <ul class="topnav__dropdown" id="storiesDropdown" role="menu" aria-label="Jump to a story"></ul>
       </div>
       <a href="#about">About</a>
-      <a href="#team">Team</a>
       <a href="#faq">FAQ</a>
       <a href="#contact" class="topnav__cta">Enquire</a>
     </nav>
@@ -97,14 +96,10 @@
     <!-- About -->
     <section id="about" class="section about" data-render="about" aria-label="About the photographer"></section>
 
-    <!-- Meet the photographers (team) -->
-    <section id="team" class="section team" data-render="team" aria-label="Meet the photographers"></section>
-
-    <!-- Stories introduction -->
-    <section id="stories" class="section stories-intro" data-render="storiesIntro" aria-label="The stories"></section>
-
-    <!-- The 7 ritual stories (each is rendered as its own <section> by main.js) -->
-    <div id="storiesList"></div>
+    <!-- Stories — parent section that contains the intro, a tab bar
+         (one tab per ritual), and the active ritual's gallery beneath.
+         The 7 sub-stories live inside #storiesPanels as <article>s. -->
+    <section id="stories" class="section stories" data-render="stories" aria-label="The stories"></section>
 
     <!-- Testimonials -->
     <section id="testimonials" class="section testimonials" data-render="testimonials" aria-label="Testimonials"></section>
@@ -112,11 +107,12 @@
     <!-- Press -->
     <section id="press" class="press" data-render="press" aria-label="Featured in"></section>
 
+    <!-- Contact (form) — placed above FAQ so couples enquire before
+         scrolling further down. -->
+    <section id="contact" class="section contact" data-render="contact" aria-label="Contact and enquiries"></section>
+
     <!-- FAQ -->
     <section id="faq" class="section faq" data-render="faq" aria-label="Frequently asked questions"></section>
-
-    <!-- Contact (form) -->
-    <section id="contact" class="section contact" data-render="contact" aria-label="Contact and enquiries"></section>
 
   </main>
 
