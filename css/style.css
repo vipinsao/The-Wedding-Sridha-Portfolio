@@ -528,18 +528,20 @@ body.has-cursor .cursor { display: block; }
   background: var(--bg-alt);
 }
 .about__inner {
-  max-width: 1280px; margin: 0 auto;
+  max-width: 1180px; margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1.2fr;
-  gap: clamp(40px, 6vw, 100px);
-  align-items: stretch;            /* photo fills row height set by text */
+  /* Photo column intentionally narrower than text column so the portrait
+     stays tall but compact — not a full half-screen-wide block. */
+  grid-template-columns: 0.85fr 1.4fr;
+  gap: clamp(36px, 5vw, 80px);
+  align-items: center;             /* photo centred next to text, not stretched */
 }
 .about__photo {
   position: relative;
-  /* No fixed aspect on desktop — let the grid stretch this column to
-     match the height of the text beside it. min-height keeps it tall
-     enough on short bios. */
-  min-height: 480px;
+  /* Fixed 4:5 portrait — sized by column width, not by text height. */
+  aspect-ratio: 4/5;
+  max-height: 560px;
+  width: 100%;
   background: var(--bg-deep);
   overflow: hidden;
   border-radius: 0;                /* sharp corners */
