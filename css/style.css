@@ -261,7 +261,7 @@ body.has-cursor .cursor { display: block; }
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--rule);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 8px;
   margin: 0;
   box-shadow: 0 14px 40px -18px rgba(20, 36, 29, 0.4);
@@ -287,7 +287,7 @@ body.has-cursor .cursor { display: block; }
   text-transform: uppercase;
   font-weight: 500;
   color: var(--ink-soft);
-  border-radius: 6px;
+  border-radius: 0;
   transition: background 0.2s var(--ease), color 0.2s var(--ease);
 }
 .topnav__dropdown a::after { display: none; }
@@ -532,13 +532,17 @@ body.has-cursor .cursor { display: block; }
   display: grid;
   grid-template-columns: 1fr 1.2fr;
   gap: clamp(40px, 6vw, 100px);
-  align-items: center;
+  align-items: stretch;            /* photo fills row height set by text */
 }
 .about__photo {
-  position: relative; aspect-ratio: 4/5;
+  position: relative;
+  /* No fixed aspect on desktop — let the grid stretch this column to
+     match the height of the text beside it. min-height keeps it tall
+     enough on short bios. */
+  min-height: 480px;
   background: var(--bg-deep);
   overflow: hidden;
-  border-radius: 24px;
+  border-radius: 0;                /* sharp corners */
 }
 .about__photo img {
   width: 100%; height: 100%; object-fit: cover;
@@ -548,7 +552,6 @@ body.has-cursor .cursor { display: block; }
   content: ""; position: absolute; inset: 0;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04), 0 30px 60px -30px rgba(30,20,20,0.4);
   pointer-events: none;
-  border-radius: inherit;
 }
 .about__text { display: grid; gap: 22px; align-content: center; }
 .about__title {
@@ -612,7 +615,7 @@ body.has-cursor .cursor { display: block; }
   aspect-ratio: 4/5;
   background: var(--bg-deep);
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 0;
   box-shadow: 0 22px 50px -30px rgba(20, 36, 29, 0.4);
 }
 .team__photo img {
@@ -715,7 +718,7 @@ body.has-cursor .cursor { display: block; }
   max-width: 1280px; margin: 0 auto clamp(36px, 5vw, 60px);
   padding: 6px;
   background: var(--bg-alt);
-  border-radius: 14px;
+  border-radius: 0;
   overflow-x: auto;
   scrollbar-width: thin;
   scroll-snap-type: x mandatory;
@@ -729,7 +732,7 @@ body.has-cursor .cursor { display: block; }
   padding: 14px 18px;
   background: transparent;
   border: 0;
-  border-radius: 10px;
+  border-radius: 0;
   font-family: var(--f-sans);
   cursor: pointer;
   color: var(--ink-mute);
@@ -817,7 +820,7 @@ body.has-cursor .cursor { display: block; }
   background: var(--bg-deep);
   overflow: hidden;
   isolation: isolate;
-  border-radius: 18px;                       /* stylish rounded edges */
+  border-radius: 0;                          /* sharp editorial corners */
   transform: translate3d(0, 0, 0);
   transition: transform 0.45s var(--ease), box-shadow 0.45s var(--ease);
   will-change: transform;
@@ -1119,7 +1122,7 @@ body.has-cursor .cursor { display: block; }
   background: var(--paper);
   padding: clamp(28px, 4vw, 48px);
   border: 1px solid var(--rule);
-  border-radius: 20px;
+  border-radius: 0;
   position: relative;
   display: grid; gap: 22px;
 }
@@ -1342,7 +1345,7 @@ body.has-cursor .lightbox { cursor: none; }
   max-width: 100%; max-height: 100%;
   object-fit: contain;
   box-shadow: 0 60px 120px -40px rgba(0,0,0,0.6);
-  border-radius: 14px;
+  border-radius: 0;
 }
 .lightbox__close, .lightbox__nav {
   position: absolute;
@@ -1403,8 +1406,8 @@ body.has-cursor .lightbox { cursor: none; }
   }
   .section__title { font-size: 38px; }
 
-  .about__inner { grid-template-columns: 1fr; gap: 36px; }
-  .about__photo { aspect-ratio: 4/5; max-width: 360px; }
+  .about__inner { grid-template-columns: 1fr; gap: 36px; align-items: start; }
+  .about__photo { aspect-ratio: 4/5; max-width: 360px; min-height: 0; }
   .about__title { font-size: 32px; }
 
   .stories-intro__title { font-size: 30px; }
@@ -1414,7 +1417,7 @@ body.has-cursor .lightbox { cursor: none; }
 
   /* Mobile masonry — 2 columns at phone width, photos at natural aspect. */
   .gallery { column-count: 2; column-gap: 8px; }
-  .card { margin-bottom: 8px; border-radius: 14px; }
+  .card { margin-bottom: 8px; border-radius: 0; }
   /* Captions/indices always visible on touch (no hover state) */
   .card__caption, .card__index { opacity: 1; transform: none; }
   .card:hover { animation: none; transform: none; box-shadow: none; }
@@ -1466,7 +1469,32 @@ body.has-cursor .lightbox { cursor: none; }
 /* Tighter phone breakpoint — 2-column masonry, smaller gap */
 @media (max-width: 460px) {
   .gallery { column-count: 2; column-gap: 6px; }
-  .card { margin-bottom: 6px; border-radius: 12px; }
+  .card { margin-bottom: 6px; border-radius: 0; }
+}
+
+/* Stories tabs on mobile — touch-friendly padding, smaller type so the
+   row of 7 ritual labels fits comfortably while still being scrollable. */
+@media (max-width: 600px) {
+  .stories__tabs {
+    padding: 4px;
+    gap: 4px;
+    margin-bottom: 28px;
+  }
+  .stories__tab {
+    padding: 11px 14px;
+    min-height: 48px;            /* iOS HIG minimum touch target */
+  }
+  .stories__tab-title { font-size: 14px; }
+  .stories__tab-num   { font-size: 9px; letter-spacing: 0.24em; }
+  .stories__intro { margin-bottom: 28px; }
+}
+
+/* Footer: enough breathing room for the icon row even on very small
+   screens; ensure 5 icons fit at 320 px width. */
+@media (max-width: 380px) {
+  .footer__socials { gap: 10px; }
+  .footer__social { width: 40px; height: 40px; }
+  .footer__social svg { width: 16px; height: 16px; }
 }
 
 /* ── Small phones (≤ 380 px) ────────────────────────────────────────
