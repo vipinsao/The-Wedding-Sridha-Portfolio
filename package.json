@@ -1,0 +1,21 @@
+{
+  "name": "the-wedding-sridha",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Portfolio site for The Wedding Sridha — static frontend + Netlify Functions backend.",
+  "type": "module",
+  "scripts": {
+    "seed": "node scripts/seed-content.mjs",
+    "dev": "netlify dev"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0",
+    "busboy": "^1.6.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "sharp": "^0.34.5"
+  }
+}

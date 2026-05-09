@@ -1,0 +1,31 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/login"
+  to   = "/.netlify/functions/login"
+  status = 200
+
+[[redirects]]
+  from = "/api/logout"
+  to   = "/.netlify/functions/logout"
+  status = 200
+
+[[redirects]]
+  from = "/api/content"
+  to   = "/.netlify/functions/content"
+  status = 200
+
+[[redirects]]
+  from = "/api/upload"
+  to   = "/.netlify/functions/upload"
+  status = 200
+
+[[redirects]]
+  from = "/api/images/*"
+  to   = "/.netlify/functions/images/:splat"
+  status = 200

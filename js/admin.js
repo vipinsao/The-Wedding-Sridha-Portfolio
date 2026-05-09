@@ -4,7 +4,13 @@
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "sridha:overrides";
+  /* ── Storage keys ──────────────────────────────────────────────────
+     STORAGE_KEY  — local draft of unsynced edits (only used if a server
+                    save failed; cleared after a successful PUT).
+     SESSION_KEY  — flips to "1" after a successful login round-trip;
+                    the actual auth is the HTTP-only cookie set by
+                    /api/login, this is just a UX hint. */
+  const STORAGE_KEY = "sridha:draft";
   const SESSION_KEY = "sridha:admin-ok";
 
   const $  = (s, r) => (r || document).querySelector(s);
@@ -12,6 +18,10 @@
 
   const DEFAULTS = window.SRIDHA_DATA || {};
   function loadState() {
+    /* Start from server-provided data (window.SRIDHA_DATA is set by
+       js/content-loader.js before this script runs). If a draft exists
+       — meaning a previous save couldn't reach the server — layer it
+       on top so we don't lose unsynced edits. */
     const base = JSON.parse(JSON.stringify(DEFAULTS));
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -29,32 +39,62 @@
     }[c]));
   const escapeAttr = escapeHtml;
 
-  /* ── Password gate ─────────────────────────────────────────────────── */
+  /* ── Password gate ───────────────────────────────────────────────────
+     POSTs the password to /api/login. The server checks against the
+     ADMIN_PASSWORD env var and (on success) sets an HTTP-only signed
+     cookie that gates every PUT/upload call. We can't read the cookie
+     from JS, so we mirror the success state in sessionStorage just to
+     decide whether to show the modal on reload. */
   function setupLogin() {
     const modal = $("#loginModal");
     if (sessionStorage.getItem(SESSION_KEY) === "1") { modal.classList.add("is-hidden"); return; }
-    const form = $("#loginForm"), pwd = $("#loginPwd"), err = $("#loginErr");
+    const form = $("#loginForm"), pwd = $("#loginPwd"), err = $("#loginErr"), btn = form.querySelector("button[type='submit']");
     pwd.focus();
-    form.addEventListener("submit", (e) => {
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const expected = (state.meta && state.meta.adminPassword) || "sridha2024";
-      if (pwd.value === expected) {
-        sessionStorage.setItem(SESSION_KEY, "1");
-        modal.classList.add("is-hidden");
-      } else {
-        err.textContent = "That password didn't match. Try again.";
-        pwd.value = ""; pwd.focus();
+      err.textContent = " ";
+      btn.disabled = true;
+      try {
+        const res = await fetch("/api/login", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ password: pwd.value }),
+        });
+        if (res.ok) {
+          sessionStorage.setItem(SESSION_KEY, "1");
+          modal.classList.add("is-hidden");
+        } else if (res.status === 401) {
+          err.textContent = "That password didn't match. Try again.";
+          pwd.value = ""; pwd.focus();
+        } else if (res.status === 500) {
+          const info = await res.json().catch(() => ({}));
+          err.textContent = info.detail || "Server isn't configured. Set ADMIN_PASSWORD and ADMIN_SECRET on Netlify.";
+        } else {
+          err.textContent = "Login failed (" + res.status + "). Try again in a moment.";
+        }
+      } catch (_) {
+        err.textContent = "Couldn't reach the server. Are you online?";
+      } finally {
+        btn.disabled = false;
       }
     });
   }
 
   /* ── Save + preview reload ─────────────────────────────────────────── */
-  const flashSaved = () => {
+  function setPillState(label, mode) {
+    /* mode: "saving" | "saved" | "error" | "offline" */
     const pill = $("#savedPill");
-    pill.classList.add("is-on");
-    clearTimeout(flashSaved._t);
-    flashSaved._t = setTimeout(() => pill.classList.remove("is-on"), 1400);
-  };
+    if (!pill) return;
+    pill.textContent = label;
+    pill.classList.toggle("is-on",      mode === "saved");
+    pill.classList.toggle("is-saving",  mode === "saving");
+    pill.classList.toggle("is-error",   mode === "error" || mode === "offline");
+    if (mode === "saved") {
+      clearTimeout(setPillState._t);
+      setPillState._t = setTimeout(() => pill.classList.remove("is-on"), 1400);
+    }
+  }
 
   const reloadPreview = debounce(() => {
     const f = $("#previewFrame");
@@ -62,15 +102,76 @@
     f.src = "index.html?t=" + Date.now();
   }, 450);
 
-  const persist = debounce(() => {
+  /* Server sync. Debounce ~600ms so a flurry of keystrokes is one PUT.
+     If the network is down (or the cookie expired), keep the draft in
+     localStorage so the next save retries without losing edits. */
+  let syncInFlight  = false;
+  let syncQueued    = false;
+  let lastSyncedJSON = "";
+
+  async function syncNow() {
+    if (syncInFlight) { syncQueued = true; return; }
+    syncInFlight = true;
+    setPillState("Saving…", "saving");
+    const snapshot = JSON.stringify(state);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      flashSaved(); reloadPreview();
-    } catch (e) {
-      console.error("Persist failed", e);
-      alert("Couldn't save — your browser storage may be full.");
+      const res = await fetch("/api/content", {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: snapshot,
+      });
+      if (res.status === 401) {
+        sessionStorage.removeItem(SESSION_KEY);
+        setPillState("Session expired", "error");
+        $("#loginModal").classList.remove("is-hidden");
+        $("#loginPwd").focus();
+        return;
+      }
+      if (!res.ok) {
+        setPillState("Save failed (" + res.status + ")", "error");
+        return;
+      }
+      lastSyncedJSON = snapshot;
+      try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+      setPillState("Saved", "saved");
+    } catch (_) {
+      /* Offline — stash a draft so we don't lose work. */
+      try { localStorage.setItem(STORAGE_KEY, snapshot); } catch (_) {}
+      setPillState("Offline (draft saved)", "offline");
+    } finally {
+      syncInFlight = false;
+      if (syncQueued) { syncQueued = false; syncNow(); }
     }
-  }, 320);
+  }
+
+  const syncDebounced = debounce(syncNow, 600);
+
+  function persist() {
+    /* Always keep a draft locally (the debounced sync may not run if
+       the user closes the tab in the next 600ms). */
+    const json = JSON.stringify(state);
+    try { localStorage.setItem(STORAGE_KEY, json); } catch (_) {}
+    /* Also write the content-loader's cache key so the iframe preview
+       reflects unsaved edits even when /api/content is offline (e.g.
+       local Python server, no Netlify Functions). The server PUT below
+       is still the source of truth in production. */
+    try { localStorage.setItem("sridha:content-cache:v1", json); } catch (_) {}
+    reloadPreview();
+    syncDebounced();
+  }
+
+  /* Back-compat alias for older call sites that just want a "Saved" flash. */
+  function flashSaved() { setPillState("Saved", "saved"); }
+
+  /* Best-effort flush on tab close so quick edits don't vanish. */
+  window.addEventListener("beforeunload", () => {
+    if (JSON.stringify(state) === lastSyncedJSON) return;
+    try {
+      const blob = new Blob([JSON.stringify(state)], { type: "application/json" });
+      navigator.sendBeacon && navigator.sendBeacon("/api/content", blob);
+    } catch (_) {}
+  });
 
   /* ── Field helpers ─────────────────────────────────────────────────── */
   function field(label, key, value, opts) {
@@ -232,6 +333,89 @@
         Best at <strong>2× display size</strong> (e.g. 400 px wide for a 200 px logo). Transparent PNG or SVG looks cleanest. Dark logos auto-invert to white over the dark hero photo.
       </div>
     `, true);
+  }
+
+  /* Live-update the preview swatch + hex labels in the Theme card without
+     re-rendering the whole form (which would lose color-picker focus). */
+  function updateThemePreviewSwatch() {
+    const t = state.theme || {};
+    const bg = t.bg || "#D8E8E0";
+    const ink = t.ink || "#2A4F44";
+    const preview = $("[data-theme-preview]");
+    if (preview) {
+      preview.style.background = bg;
+      preview.style.color = ink;
+      preview.style.borderColor = ink;
+      const eyebrow = preview.querySelector(".theme-preview__eyebrow");
+      if (eyebrow) eyebrow.style.color = ink;
+      const btn = preview.querySelector(".theme-preview__btn");
+      if (btn) { btn.style.background = ink; btn.style.color = bg; }
+    }
+    const bgHex = $('[data-theme-hex="bg"]');
+    if (bgHex) bgHex.textContent = bg.toUpperCase();
+    const inkHex = $('[data-theme-hex="ink"]');
+    if (inkHex) inkHex.textContent = ink.toUpperCase();
+  }
+
+  /* Theme colors — two pickers (light bg + dark accent) + presets.
+     Both values live in state.theme.{bg,ink}; if absent, the site uses
+     its baked-in CSS defaults. */
+  function renderTheme() {
+    const t = state.theme || {};
+    const bg  = t.bg  || "#D8E8E0";
+    const ink = t.ink || "#2A4F44";
+    /* Six curated palettes the user can one-click apply, then tweak. */
+    const presets = [
+      { name: "Sage & Forest",     bg: "#D8E8E0", ink: "#2A4F44" },
+      { name: "Cream & Maroon",    bg: "#F5F0E8", ink: "#A8362F" },
+      { name: "Linen & Espresso",  bg: "#F2EAE3", ink: "#3E2723" },
+      { name: "Sand & Navy",       bg: "#E8DDD0", ink: "#1A2E45" },
+      { name: "Bone & Rust",       bg: "#EFE6DC", ink: "#7C3F00" },
+      { name: "Ink & Champagne",   bg: "#1A1612", ink: "#E8D4A8" }
+    ];
+    const presetButtons = presets.map((p) => `
+      <button type="button" class="theme-preset" data-theme-preset='${escapeAttr(JSON.stringify({bg:p.bg, ink:p.ink}))}'
+              style="background:${p.bg};color:${p.ink};border-color:${p.ink};">
+        <span class="theme-preset__dot" style="background:${p.ink};border-color:${p.ink};"></span>
+        ${escapeHtml(p.name)}
+      </button>`).join("");
+
+    return block("theme", "Color", "Theme colors", `
+      <p class="form__hint" style="margin-bottom:16px;">
+        Pick two colors — a light <b>background</b> and a dark <b>accent</b>. Every surface, text shade,
+        button, and link recolors live across the whole site.
+      </p>
+
+      <div class="theme-pickers">
+        <label class="theme-picker">
+          <span class="theme-picker__label">Background <span class="theme-picker__sub">(light)</span></span>
+          <span class="theme-picker__row">
+            <input type="color" data-theme-input="bg" value="${escapeAttr(bg)}">
+            <span class="theme-picker__hex" data-theme-hex="bg">${escapeHtml(bg.toUpperCase())}</span>
+          </span>
+        </label>
+        <label class="theme-picker">
+          <span class="theme-picker__label">Accent / leaf <span class="theme-picker__sub">(dark)</span></span>
+          <span class="theme-picker__row">
+            <input type="color" data-theme-input="ink" value="${escapeAttr(ink)}">
+            <span class="theme-picker__hex" data-theme-hex="ink">${escapeHtml(ink.toUpperCase())}</span>
+          </span>
+        </label>
+      </div>
+
+      <div class="theme-preview" data-theme-preview style="background:${escapeAttr(bg)};color:${escapeAttr(ink)};border-color:${escapeAttr(ink)};">
+        <span class="theme-preview__eyebrow" style="color:${escapeAttr(ink)};">Eyebrow text</span>
+        <span class="theme-preview__title">Sample headline</span>
+        <span class="theme-preview__btn" style="background:${escapeAttr(ink)};color:${escapeAttr(bg)};">Begin a Conversation</span>
+      </div>
+
+      <label class="field__label" style="margin-top:18px;">Quick presets</label>
+      <div class="theme-presets">${presetButtons}</div>
+
+      <div class="theme-actions">
+        <button type="button" class="btn btn--ghost" data-theme-reset>Reset to default</button>
+      </div>
+    `);
   }
 
   function renderFonts() {
@@ -543,6 +727,7 @@ images/haldi/02.jpg"></textarea>
     body.innerHTML = [
       renderBrand(),
       renderLogo(),
+      renderTheme(),
       renderFonts(),
       renderHero(),
       renderAbout(),
@@ -588,6 +773,19 @@ images/haldi/02.jpg"></textarea>
     /* Inputs (live save) */
     form.addEventListener("input", (e) => {
       const el = e.target;
+
+      /* Theme color pickers — light bg + dark accent. State stored at
+         state.theme.{bg,ink}; main.js reads it on next render and writes
+         CSS variables on :root, recoloring the whole site. */
+      const themeKey = el.getAttribute && el.getAttribute("data-theme-input");
+      if (themeKey) {
+        if (!state.theme) state.theme = {};
+        state.theme[themeKey] = el.value;
+        updateThemePreviewSwatch();
+        persist();
+        return;
+      }
+
       const bind = el.getAttribute && el.getAttribute("data-bind");
       if (!bind) return;
       setPath(state, bind, el.value);
@@ -790,6 +988,32 @@ images/haldi/02.jpg"></textarea>
        Order matters: handle BUTTON clicks before the head toggle, so clicking
        ↑↓× inside a section header doesn't also expand/collapse the card. */
     form.addEventListener("click", (e) => {
+      /* Theme preset — apply both colors at once */
+      const presetBtn = e.target.closest("[data-theme-preset]");
+      if (presetBtn) {
+        try {
+          const preset = JSON.parse(presetBtn.getAttribute("data-theme-preset"));
+          if (preset && preset.bg && preset.ink) {
+            state.theme = { bg: preset.bg, ink: preset.ink };
+            const open = $$(".card-block.is-open").map((b) => b.dataset.block);
+            renderForm();
+            open.forEach((k) => { const el = $(`.card-block[data-block="${k}"]`); if (el) el.classList.add("is-open"); });
+            persist();
+          }
+        } catch (_) {}
+        return;
+      }
+      /* Theme reset — drop the override, fall back to baked-in CSS defaults */
+      const resetThemeBtn = e.target.closest("[data-theme-reset]");
+      if (resetThemeBtn) {
+        delete state.theme;
+        const open = $$(".card-block.is-open").map((b) => b.dataset.block);
+        renderForm();
+        open.forEach((k) => { const el = $(`.card-block[data-block="${k}"]`); if (el) el.classList.add("is-open"); });
+        persist();
+        return;
+      }
+
       /* Move section up */
       const upBtn = e.target.closest("[data-act='section-up']");
       if (upBtn) {
@@ -1041,10 +1265,10 @@ images/haldi/02.jpg"></textarea>
           }
           if (!data || typeof data !== "object") throw new Error("File is empty or invalid.");
           state = data;
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
           renderForm();
           reloadPreview();
-          flashSaved();
+          /* Push to server immediately — import is an explicit "publish". */
+          syncNow();
         } catch (err) {
           alert("Import failed: " + err.message);
         } finally {
@@ -1054,16 +1278,159 @@ images/haldi/02.jpg"></textarea>
       reader.readAsText(file);
     });
 
-    /* Reset */
-    $("#resetBtn").addEventListener("click", () => {
-      if (!confirm("Reset all edits and restore the defaults from data.js? This cannot be undone.")) return;
-      localStorage.removeItem(STORAGE_KEY);
-      state = JSON.parse(JSON.stringify(DEFAULTS));
-      renderForm();
-      reloadPreview();
-      flashSaved();
+    /* Reset — discards local draft and reloads the published content
+       from the server. (Use the Export button first if you want a
+       backup before discarding.) */
+    $("#resetBtn").addEventListener("click", async () => {
+      if (!confirm("Discard your local edits and reload the latest published content from the server?")) return;
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        const res = await fetch("/api/content", { credentials: "same-origin", cache: "no-store" });
+        if (res.ok) {
+          state = await res.json();
+        } else {
+          state = JSON.parse(JSON.stringify(DEFAULTS));
+        }
+        renderForm();
+        reloadPreview();
+        setPillState("Reloaded from server", "saved");
+      } catch (_) {
+        alert("Couldn't reach the server. Reset cancelled.");
+      }
     });
   }
+
+  /* ── Image upload buttons ───────────────────────────────────────────
+     Walk every URL-style input that maps to an image field and inject
+     an "Upload" button next to it. Clicking opens a file picker, posts
+     the file to /api/upload, and on success writes the returned URL
+     into the input + dispatches "input" so the existing data-bind
+     plumbing fires. */
+  const IMAGE_BIND_PATTERNS = [
+    /\.src$/,                    // photo rows (sections.*.photos.*.src)
+    /^brand\.logo$/,             // brand logo
+    /\.image$/,                  // misc generic image fields
+    /\.cover$/,                  // covers (e.g. testimonials.*.cover)
+    /\.poster$/,
+  ];
+  function isImageBind(b) {
+    if (!b) return false;
+    return IMAGE_BIND_PATTERNS.some((re) => re.test(b));
+  }
+
+  function injectUploadButtons() {
+    $$('input[type="url"][data-bind], input[type="text"][data-bind]').forEach((inp) => {
+      const bind = inp.getAttribute("data-bind");
+      if (!isImageBind(bind)) return;
+      if (inp.dataset.uploadWired === "1") return;
+      inp.dataset.uploadWired = "1";
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn btn--ghost btn--upload";
+      btn.dataset.uploadTarget = bind;
+      btn.title = "Upload an image file";
+      btn.style.cssText = "margin-left:6px;flex:0 0 auto;";
+      btn.textContent = "Upload";
+
+      /* Try to put it directly after the input. If the input is inside
+         a flex row (.photo-row__fields), the button sits inline. */
+      if (inp.parentNode) inp.parentNode.insertBefore(btn, inp.nextSibling);
+    });
+  }
+
+  async function uploadImageFile(file) {
+    if (!file) throw new Error("no file");
+    if (file.size > 12 * 1024 * 1024) throw new Error("Image is over 12 MB. Please compress it first.");
+    const fd = new FormData();
+    fd.append("file", file, file.name);
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      credentials: "same-origin",
+      body: fd,
+    });
+    if (res.status === 401) {
+      sessionStorage.removeItem(SESSION_KEY);
+      $("#loginModal").classList.remove("is-hidden");
+      $("#loginPwd").focus();
+      throw new Error("Please log in again.");
+    }
+    if (!res.ok) {
+      const info = await res.json().catch(() => ({}));
+      throw new Error(info.error || ("Upload failed (" + res.status + ")"));
+    }
+    return res.json();
+  }
+
+  function wireUploadButtons() {
+    /* One delegated handler. */
+    document.body.addEventListener("click", async (e) => {
+      const btn = e.target.closest(".btn--upload");
+      if (!btn) return;
+      e.preventDefault();
+      const bind = btn.dataset.uploadTarget;
+      const target = $(`[data-bind="${bind.replace(/"/g, '\\"')}"]`);
+      if (!target) return;
+      const picker = document.createElement("input");
+      picker.type = "file";
+      picker.accept = "image/*";
+      picker.style.display = "none";
+      document.body.appendChild(picker);
+      picker.addEventListener("change", async () => {
+        const file = picker.files && picker.files[0];
+        document.body.removeChild(picker);
+        if (!file) return;
+        const old = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "Uploading…";
+        try {
+          const out = await uploadImageFile(file);
+          target.value = out.url;
+          target.dispatchEvent(new Event("input", { bubbles: true }));
+          btn.textContent = "Uploaded ✓";
+          setTimeout(() => { btn.textContent = old; btn.disabled = false; }, 1200);
+        } catch (err) {
+          alert(err.message || "Upload failed.");
+          btn.textContent = old;
+          btn.disabled = false;
+        }
+      });
+      picker.click();
+    });
+
+    /* Whenever the form re-renders, re-decorate URL inputs. */
+    const form = $("#form");
+    if (form) {
+      const observer = new MutationObserver(() => injectUploadButtons());
+      observer.observe(form, { childList: true, subtree: true });
+    }
+  }
+
+  /* When the content-loader's background fetch lands a fresher copy
+     than what we booted from cache, swap state in — but only if the
+     user has no unsynced local draft, so we never silently clobber
+     edits in flight. */
+  window.addEventListener("sridha:remote-content", (e) => {
+    if (syncInFlight || syncQueued) return;
+    const draft = (() => { try { return localStorage.getItem(STORAGE_KEY); } catch (_) { return null; } })();
+    if (draft) return;
+    const fresh = e.detail;
+    if (!fresh || JSON.stringify(fresh) === JSON.stringify(state)) return;
+    state = fresh;
+    lastSyncedJSON = JSON.stringify(state);
+    /* Preserve open card-blocks across the re-render. */
+    const openKeys = $$(".card-block.is-open").map((b) => b.dataset.block + (b.dataset.sidx !== undefined ? ":" + b.dataset.sidx : ""));
+    renderForm();
+    openKeys.forEach((key) => {
+      const [block, sidx] = key.split(":");
+      const sel = sidx !== undefined
+        ? `.card-block[data-block="${block}"][data-sidx="${sidx}"]`
+        : `.card-block[data-block="${block}"]`;
+      const el = $(sel);
+      if (el) el.classList.add("is-open");
+    });
+    setPillState("Synced from server", "saved");
+  });
 
   /* ── Boot ──────────────────────────────────────────────────────────── */
   function boot() {
@@ -1072,6 +1439,11 @@ images/haldi/02.jpg"></textarea>
     injectActiveFontsForPreview();
     wireForm();
     wireToolbar();
+    injectUploadButtons();
+    wireUploadButtons();
+    /* Mark current state as already-synced if it matches the bundle —
+       prevents a spurious "Saved" pill on first load with no edits. */
+    lastSyncedJSON = JSON.stringify(state);
   }
 
   if (document.readyState === "loading") {

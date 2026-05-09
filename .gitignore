@@ -18,3 +18,8 @@ data-backup-*.js
 # ── Local server artefacts ──────────────────────────────────────────
 .cache/
 node_modules/
+.netlify/
+
+# ── Local env secrets (ADMIN_PASSWORD, ADMIN_SECRET) ────────────────
+.env
+.env.local

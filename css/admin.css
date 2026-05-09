@@ -104,9 +104,25 @@ a:hover { text-decoration: underline; }
   display: flex; align-items: center; gap: 6px;
   opacity: 0; transition: opacity 0.3s ease;
 }
-.saved-pill.is-on { opacity: 1; }
+.saved-pill.is-on,
+.saved-pill.is-saving,
+.saved-pill.is-error { opacity: 1; }
+.saved-pill.is-saving { color: var(--text-muted, #8a7a6e); }
+.saved-pill.is-error  { color: var(--danger); }
 .saved-pill::before {
   content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ok);
+}
+.saved-pill.is-saving::before { background: var(--text-muted, #8a7a6e); animation: pill-pulse 0.9s ease-in-out infinite; }
+.saved-pill.is-error::before  { background: var(--danger); }
+@keyframes pill-pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
+
+/* Inline image-upload button next to URL inputs (added by admin.js) */
+.btn--upload {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 6px 10px;
+  white-space: nowrap;
 }
 
 /* ── Workspace ──────────────────────────────────────────────────────── */
@@ -734,6 +750,122 @@ a:hover { text-decoration: underline; }
   min-height: 18px;
   margin-bottom: 8px;
   font-style: italic;
+}
+
+/* ── Theme color pickers ────────────────────────────────────────────── */
+.theme-pickers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.theme-picker {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 14px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.theme-picker__label {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+.theme-picker__sub {
+  font-family: var(--f-serif, Georgia, serif);
+  font-style: italic;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--ink-mute);
+  margin-left: 4px;
+  font-weight: 400;
+}
+.theme-picker__row {
+  display: flex; align-items: center; gap: 12px;
+}
+.theme-picker input[type="color"] {
+  width: 56px; height: 40px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: transparent;
+  padding: 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.theme-picker input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.theme-picker input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 3px; }
+.theme-picker__hex {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.theme-preview {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 14px;
+  padding: 28px 24px;
+  border: 1px solid;
+  border-radius: 6px;
+  margin-top: 4px;
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+.theme-preview__eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  font-weight: 500;
+  opacity: 0.85;
+}
+.theme-preview__title {
+  font-family: var(--f-serif, Georgia, serif);
+  font-size: 26px;
+  letter-spacing: -0.005em;
+  line-height: 1;
+}
+.theme-preview__btn {
+  display: inline-flex; padding: 10px 18px;
+  font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
+  font-weight: 500;
+  transition: background 0.25s ease, color 0.25s ease;
+}
+
+.theme-presets {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+.theme-preset {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid;
+  border-radius: 4px;
+  font-family: var(--f-serif, Georgia, serif);
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+.theme-preset:hover { transform: translateY(-1px); }
+.theme-preset__dot {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+
+.theme-actions {
+  margin-top: 14px;
+  display: flex; justify-content: flex-end;
+}
+
+@media (max-width: 600px) {
+  .theme-pickers { grid-template-columns: 1fr; }
+  .theme-presets { grid-template-columns: 1fr; }
 }
 
 /* ── File input override ────────────────────────────────────────────── */

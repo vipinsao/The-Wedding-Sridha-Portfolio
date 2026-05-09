@@ -54,7 +54,7 @@
     <!-- Form column -->
     <section class="form" id="form" aria-label="Editor">
       <h1 class="form__title">Compose your portfolio.</h1>
-      <p class="form__hint">Every change saves automatically to this browser, and the preview on the right updates as you type. When you're ready to publish to the live site, click <b>Export data.js</b> and replace the file in <code>js/data.js</code> on your host.</p>
+      <p class="form__hint">Every change saves to the live server automatically — your edits are visible to visitors within seconds. The preview on the right updates as you type. Use <b>Export data.js</b> if you want a local backup file.</p>
 
       <!-- Sections render here -->
       <div id="formBody"></div>
@@ -62,7 +62,7 @@
       <div class="info">
         <div class="info__title">How this works</div>
         <div class="info__body">
-          Two pages share the same data: <code>index.html</code> (your clients) and <code>admin.html</code> (this editor). Edits live in your browser instantly — to make them visible to <em>everyone</em>, hit <b>Export data.js</b> and upload the downloaded file to <code>js/data.js</code> on your server. Photos are referenced by URL — paste links from Unsplash, your Drive (use the direct image URL), Cloudinary, or relative paths like <code>images/haldi/01.jpg</code> if you've uploaded files alongside the site.
+          Edits save to the server (<code>/api/content</code>) automatically and become visible to visitors within seconds — no file upload step. For images, click the <b>Upload</b> button next to any image URL field to upload a file directly, or paste a URL from Unsplash, Drive, Cloudinary, etc. <b>Export data.js</b> downloads a local backup; <b>Reset</b> discards your local edits and reloads from the server.
         </div>
       </div>
     </section>
@@ -83,8 +83,9 @@
   <!-- Font catalog (shared with index.html) -->
   <script src="js/fonts.js"></script>
 
-  <!-- Data + admin app -->
-  <script src="js/data.js"></script>
-  <script src="js/admin.js"></script>
+  <!-- Data + admin app: content-loader populates window.SRIDHA_DATA from
+       /api/content (with fallback to js/data.js on first deploy), then
+       loads admin.js. -->
+  <script src="js/content-loader.js" data-mode="admin" data-then="js/admin.js"></script>
 </body>
 </html>
