@@ -114,6 +114,52 @@
     });
   }
 
+  /* ── 3a. Theme colors ──────────────────────────────────────────────
+     The admin lets the user pick two colors — a light "background" and a
+     dark "accent / leaf". From those two we derive every surface and ink
+     shade in the design system, then write them to CSS variables on
+     :root so the existing stylesheet recolors instantly. */
+  function hexToRgb(hex) {
+    const m = /^#?([a-f0-9]{2})([a-f0-9]{2})([a-f0-9]{2})$/i.exec(String(hex || "").trim());
+    return m ? { r: parseInt(m[1], 16), g: parseInt(m[2], 16), b: parseInt(m[3], 16) } : null;
+  }
+  function rgbToHex(r, g, b) {
+    return "#" + [r, g, b].map((v) => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+  }
+  /* mix(a, b, t):   t=0 → a, t=1 → b — straight RGB linear interpolation */
+  function mixColor(a, b, t) {
+    const A = hexToRgb(a), B = hexToRgb(b);
+    if (!A || !B) return a;
+    return rgbToHex(A.r + (B.r - A.r) * t, A.g + (B.g - A.g) * t, A.b + (B.b - A.b) * t);
+  }
+  function applyTheme() {
+    const t = DATA.theme;
+    if (!t || !t.bg || !t.ink) return;       /* CSS defaults stand */
+    const bg = t.bg, ink = t.ink;
+    const inkRgb = hexToRgb(ink);
+    if (!hexToRgb(bg) || !inkRgb) return;
+    const root = document.documentElement;
+    /* Surfaces — pure bg, then progressively tinted toward the accent. */
+    root.style.setProperty("--bg",       bg);
+    root.style.setProperty("--bg-alt",   mixColor(bg, ink, 0.08));
+    root.style.setProperty("--bg-deep",  mixColor(bg, ink, 0.16));
+    /* Inks — accent itself, then progressively faded toward bg for text
+       hierarchy (body, mute). */
+    root.style.setProperty("--ink",      ink);
+    root.style.setProperty("--ink-soft", mixColor(ink, bg, 0.20));
+    root.style.setProperty("--ink-mute", mixColor(ink, bg, 0.45));
+    /* Primary CTA / hover accent — same family as ink. */
+    root.style.setProperty("--maroon",    ink);
+    root.style.setProperty("--maroon-dk", mixColor(ink, "#000000", 0.20));
+    /* Rules & form fields — translucent ink, opacities preserved. */
+    root.style.setProperty("--rule",      `rgba(${inkRgb.r}, ${inkRgb.g}, ${inkRgb.b}, 0.14)`);
+    root.style.setProperty("--rule-soft", `rgba(${inkRgb.r}, ${inkRgb.g}, ${inkRgb.b}, 0.07)`);
+    root.style.setProperty("--field",     `rgba(${inkRgb.r}, ${inkRgb.g}, ${inkRgb.b}, 0.18)`);
+    /* Mobile address-bar tint matches the page bg. */
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute("content", bg);
+  }
+
   /* ── 3b. Brand mark in topbar + loader + title ────────────────────── */
   function applyBrand() {
     const brand = (DATA.brand || {});
@@ -533,8 +579,8 @@
 
     function showError(msg) {
       submitTxt.textContent = msg;
-      submitBtn.style.background = "#7A2520";
-      submitBtn.style.borderColor = "#7A2520";
+      submitBtn.style.background = "#1B3A30";
+      submitBtn.style.borderColor = "#1B3A30";
       setTimeout(() => {
         submitTxt.textContent = "Send Enquiry";
         submitBtn.style.background = "";
@@ -671,15 +717,16 @@
     });
   }
 
-  /* ── 12b. Auto-swap — the BIG featured card trades with a small card ──
-     Every 3s, the featured (big 2×2) card swaps images with one of the
-     small cards, via a 2-second smooth crossfade. The grid never shows
-     duplicate images — each tick is a position-trade between two cells.
-     Over time every photo cycles through the big position.
-
-     Keeps running even while the user is looking at the section (no hover
-     pause). Only stops when the tab is in the background. */
+  /* ── 12b. Auto-swap — disabled.
+     The original design had a fixed 4×2 grid where cards all shared a
+     4:5 aspect ratio, so swapping images between cells was visually
+     seamless. With the new Pinterest-style masonry every photo keeps
+     its natural aspect, and swapping mismatched ratios would reflow
+     the column on every tick. We keep the function shell so the
+     boot() call is a no-op rather than removed. */
   function setupAutoSwap() {
+    return;
+    /* eslint-disable */
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     (DATA.sections || []).forEach((section, sIdx) => {
@@ -806,6 +853,7 @@
 
   /* ── 14. Boot ─────────────────────────────────────────────────────── */
   function boot() {
+    applyTheme();
     applyFonts();
     applyBrand();
     renderAll();

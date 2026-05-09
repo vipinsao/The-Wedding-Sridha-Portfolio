@@ -3,20 +3,22 @@
 
 /* ── Tokens ─────────────────────────────────────────────────────────── */
 :root {
-  --bg:        #F5F0E8;
-  --bg-alt:    #EDE5D6;
-  --bg-deep:   #E5DCC9;
+  /* Sage-and-forest palette — pale celadon background paired with a deep
+     evergreen "leaf" accent. Two-tone, calm, editorial. */
+  --bg:        #D8E8E0;        /* pale celadon — leaf-bg */
+  --bg-alt:    #C6D9CF;        /* slightly deeper celadon */
+  --bg-deep:   #B0CABF;        /* deepest light tone */
   --paper:     #FFFFFF;
-  --ink:       #1E1414;
-  --ink-soft:  #4A3A33;        /* darkened for AA contrast */
-  --ink-mute:  #6B5B50;        /* darkened for AA contrast */
-  --maroon:    #A8362F;        /* warmer Indian wedding red */
-  --maroon-dk: #7A2520;
-  --gold:      #C9A961;
-  --gold-soft: #E2CE9E;
-  --rule:      rgba(30, 20, 20, 0.14);
-  --rule-soft: rgba(30, 20, 20, 0.07);
-  --field:     rgba(30, 20, 20, 0.18);
+  --ink:       #14241D;        /* near-black forest */
+  --ink-soft:  #2F4D42;        /* forest green — body text */
+  --ink-mute:  #5A7669;        /* muted sage — hint text */
+  --maroon:    #2A4F44;        /* deep evergreen — primary accent (was Indian red) */
+  --maroon-dk: #1B3A30;
+  --gold:      #B59570;        /* warm muted brass — pairs with sage */
+  --gold-soft: #D8C4A6;
+  --rule:      rgba(20, 36, 29, 0.14);
+  --rule-soft: rgba(20, 36, 29, 0.07);
+  --field:     rgba(20, 36, 29, 0.18);
 
   --f-display: "Italiana", "Cormorant Garamond", serif;
   --f-serif:   "Cormorant Garamond", "Times New Roman", serif;
@@ -171,13 +173,11 @@ body.has-cursor .cursor { display: block; }
 }
 .topbar > * { pointer-events: auto; }
 .topbar.is-scrolled {
-  /* Deeper warm-cream background + heavier blur so the bar reads as a
-     distinct surface, not a faint wash. */
-  background: rgba(225, 213, 193, 0.94);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(30, 20, 20, 0.18);
-  box-shadow: 0 6px 20px -16px rgba(30, 20, 20, 0.4);
+  /* Stay fully transparent at all scroll positions — content reads
+     through the bar. */
+  background: transparent;
+  border-bottom: 0;
+  box-shadow: none;
 }
 
 .topbar__brand {
@@ -185,7 +185,7 @@ body.has-cursor .cursor { display: block; }
   font-style: italic;
   font-size: 18px;
   letter-spacing: 0.04em;
-  color: #0F0907;            /* darker than --ink for stronger presence */
+  color: #0E1814;            /* darker than --ink for stronger presence */
   font-weight: 500;
   display: flex; align-items: baseline; gap: 4px;
 }
@@ -232,7 +232,7 @@ body.has-cursor .cursor { display: block; }
 }
 .topnav a {
   font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase;
-  color: #1A1210;            /* darker than --ink-soft for stronger contrast */
+  color: #13231D;            /* darker than --ink-soft for stronger contrast */
   font-weight: 600;
   position: relative;
   transition: color 0.3s var(--ease);
@@ -249,15 +249,15 @@ body.has-cursor .cursor { display: block; }
 
 .topnav__cta {
   padding: 10px 18px;
-  border: 1px solid #1A1210;
+  border: 1px solid #13231D;
   background: transparent;
   font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
-  color: #0F0907 !important;
+  color: #0E1814 !important;
   font-weight: 600;
   transition: all 0.3s var(--ease);
 }
 .topnav__cta::after { display: none; }
-.topnav__cta:hover { background: #0F0907; color: var(--bg) !important; border-color: #0F0907; }
+.topnav__cta:hover { background: #0E1814; color: var(--bg) !important; border-color: #0E1814; }
 .topbar.is-light .topnav__cta { color: #fff !important; border-color: rgba(255,255,255,0.7); }
 .topbar.is-light .topnav__cta:hover { background: #fff; color: var(--ink) !important; border-color: #fff; }
 
@@ -451,6 +451,7 @@ body.has-cursor .cursor { display: block; }
   position: relative; aspect-ratio: 4/5;
   background: var(--bg-deep);
   overflow: hidden;
+  border-radius: 24px;
 }
 .about__photo img {
   width: 100%; height: 100%; object-fit: cover;
@@ -460,6 +461,7 @@ body.has-cursor .cursor { display: block; }
   content: ""; position: absolute; inset: 0;
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04), 0 30px 60px -30px rgba(30,20,20,0.4);
   pointer-events: none;
+  border-radius: inherit;
 }
 .about__text { display: grid; gap: 22px; align-content: center; }
 .about__title {
@@ -531,49 +533,52 @@ body.has-cursor .cursor { display: block; }
   content: ""; width: 30px; height: 1px; background: var(--gold-soft);
 }
 
-/* Grid photo gallery within each story.
-   Editorial 4-column grid: the FIRST photo is featured (spans 2×2 — slightly
-   bigger), the rest are smaller cells around it. `dense` packing fills any
-   gaps cleanly even if you add or remove photos. */
+/* Pinterest-style masonry — CSS multi-column flow.
+   Photos retain their natural aspect ratio (portrait, square, landscape
+   all mix together). Each column fills top-to-bottom with avoid-break
+   so cards never split mid-frame. */
 .gallery {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  grid-auto-flow: dense;
-  gap: 14px;
+  column-count: 4;
+  column-gap: 14px;
   max-width: 1440px;
   margin: 0 auto;
 }
-.gallery .card:first-child {
-  grid-column: span 2;
-  grid-row: span 2;
-  aspect-ratio: auto;             /* let it fill the 2×2 cell naturally */
-}
 
 .card {
+  display: block;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;        /* Safari */
+  page-break-inside: avoid;
+  margin: 0 0 14px;
   position: relative;
   background: var(--bg-deep);
   overflow: hidden;
   isolation: isolate;
-  aspect-ratio: 4/5;
+  border-radius: 18px;                       /* stylish rounded edges */
   transform: translate3d(0, 0, 0);
   transition: transform 0.45s var(--ease), box-shadow 0.45s var(--ease);
   will-change: transform;
 }
 
-/* Two image layers per card — the visible one and a hidden "back" layer.
-   When auto-swap fires, the back layer loads a new image, then the two
-   crossfade over 2s (ease-in-out) for a buttery transition. */
+/* Front image is laid out IN FLOW so its natural height drives the card.
+   Back image is absolute-positioned for the crossfade swap effect. */
 .card__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  filter: saturate(0.97) contrast(1.02);
+  opacity: 1;
+  transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
+}
+.card__img.is-back {
   position: absolute;
   inset: 0;
   width: 100%; height: 100%;
   object-fit: cover;
-  filter: saturate(0.97) contrast(1.02);
-  opacity: 1;
-  transition: opacity 2s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 1;
+  opacity: 0;
 }
-.card__img.is-back { opacity: 0; }    /* hidden layer waiting to swap in */
 .card[data-focus="top"]    .card__img { object-position: 50% 14%; }
 .card[data-focus="bottom"] .card__img { object-position: 50% 86%; }
 /* Make sure the caption + index sit above both image layers */
@@ -626,17 +631,19 @@ body.has-cursor .cursor { display: block; }
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 12px 26px -20px rgba(30,20,20,0.22);
   pointer-events: none;
   transition: box-shadow 0.45s var(--ease);
+  border-radius: inherit;
 }
 .card:hover::after {
   box-shadow: inset 0 0 0 1px rgba(201, 169, 97, 0.4), 0 18px 34px -22px rgba(30,20,20,0.32);
 }
 
-/* Tablet: 3 columns, featured stays 2×2 */
-@media (max-width: 1100px) {
-  .gallery { grid-template-columns: repeat(3, 1fr); gap: 12px; }
-}
+/* Masonry breakpoints — fewer columns on smaller viewports */
+@media (max-width: 1100px) { .gallery { column-count: 3; column-gap: 12px; } .card { margin-bottom: 12px; } }
 
-.card.is-broken { background: linear-gradient(135deg, var(--bg-deep), var(--bg-alt)); }
+.card.is-broken {
+  background: linear-gradient(135deg, var(--bg-deep), var(--bg-alt));
+  aspect-ratio: 4/5;            /* fallback height when the image fails */
+}
 .card.is-broken .card__img { display: none; }
 .card.is-broken::before {
   content: attr(data-fallback);
@@ -841,6 +848,7 @@ body.has-cursor .cursor { display: block; }
   background: var(--paper);
   padding: clamp(28px, 4vw, 48px);
   border: 1px solid var(--rule);
+  border-radius: 20px;
   position: relative;
   display: grid; gap: 22px;
 }
@@ -996,6 +1004,7 @@ body.has-cursor .lightbox { cursor: none; }
   max-width: 100%; max-height: 100%;
   object-fit: contain;
   box-shadow: 0 60px 120px -40px rgba(0,0,0,0.6);
+  border-radius: 14px;
 }
 .lightbox__close, .lightbox__nav {
   position: absolute;
@@ -1065,21 +1074,9 @@ body.has-cursor .lightbox { cursor: none; }
 
   .story__head { flex-direction: column; align-items: flex-start; gap: 16px; }
 
-  /* Mobile gallery: editorial 3-col grid with a dominant 2×2 featured hero.
-     The third column carries small thumbnails alongside the featured so the
-     featured cell has measurable row-height (without these neighbours the
-     2×2 cell collapses to height 0 and the hero disappears). The thumbnails
-     at 1/3 viewport width sit clearly subordinate to the hero. */
-  .gallery {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-  .gallery .card:first-child {
-    grid-column: span 2;
-    grid-row: span 2;
-    aspect-ratio: auto;           /* fills the 2×2 cell — matches desktop hero */
-  }
-  .card { aspect-ratio: 4/5; }
+  /* Mobile masonry — 2 columns at phone width, photos at natural aspect. */
+  .gallery { column-count: 2; column-gap: 8px; }
+  .card { margin-bottom: 8px; border-radius: 14px; }
   /* Captions/indices always visible on touch (no hover state) */
   .card__caption, .card__index { opacity: 1; transform: none; }
   .card:hover { animation: none; transform: none; box-shadow: none; }
@@ -1125,18 +1122,13 @@ body.has-cursor .lightbox { cursor: none; }
   .form__row { grid-template-columns: 1fr 1fr; }
   .testimonials__grid { grid-template-columns: repeat(2, 1fr); gap: 32px; }
   .hero__mark-name { font-size: clamp(80px, 11vw, 140px); }
-  .gallery { grid-template-columns: repeat(4, 1fr); }
+  .gallery { column-count: 3; }
 }
 
-/* Tighter phone breakpoint — same 3-col + 2×2 hero pattern as ≤900px,
-   just a smaller gap so the cells use the limited width well. */
+/* Tighter phone breakpoint — 2-column masonry, smaller gap */
 @media (max-width: 460px) {
-  .gallery { grid-template-columns: repeat(3, 1fr); gap: 6px; }
-  .gallery .card:first-child {
-    grid-column: span 2;
-    grid-row: span 2;
-    aspect-ratio: auto;
-  }
+  .gallery { column-count: 2; column-gap: 6px; }
+  .card { margin-bottom: 6px; border-radius: 12px; }
 }
 
 /* ── Small phones (≤ 380 px) ────────────────────────────────────────

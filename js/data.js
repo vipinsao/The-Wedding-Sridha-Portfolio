@@ -19,7 +19,7 @@ window.SRIDHA_DATA = {
     "title": "Hello, I'm Takeshwar Dewangan",
     "body": "I photograph Indian weddings as I'd want my own remembered — slowly, attentively, in a way that honours the rituals without flattening them. Eight years, more than ninety weddings, and a quiet conviction that the best frames find themselves when no one is performing for the camera.",
     "signature": "— S.",
-    "photo": "https://images.unsplash.com/photo-1517363898874-737b62a7db91?w=1400&q=85&auto=format&fit=crop"
+    "photo": "images/about.jpeg"
   },
   "storiesIntro": {
     "eyebrow": "The Work",
