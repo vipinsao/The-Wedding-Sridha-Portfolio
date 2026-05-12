@@ -1574,7 +1574,9 @@ images/haldi/02.jpg"></textarea>
       const picker = document.createElement("input");
       picker.type = "file";
       picker.accept = "image/*";
-      picker.style.display = "none";
+      /* iOS Safari silently no-ops .click() on display:none file inputs —
+         keep it in the layout/a11y tree but visually invisible. */
+      picker.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;";
       document.body.appendChild(picker);
       picker.addEventListener("change", async () => {
         const file = picker.files && picker.files[0];
