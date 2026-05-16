@@ -1680,6 +1680,187 @@ images/haldi/02.jpg"></textarea>
     });
   }
 
+  /* ── Crop step ──────────────────────────────────────────────────────
+     Between file-pick and upload we open Cropper.js in a modal so the
+     editor can frame the photo. Smart aspect default per bind:
+       hero.photo        → 16:9
+       about.photo       → 3:4
+       team.members.*    → 1:1
+       *.cover / *.poster→ 16:9
+       everything else   → free
+     User can switch ratio in the modal, "Use original" to skip, or
+     Cancel to abort the upload entirely. Returns Promise<File|null>:
+       File   = cropped (or original, if Skip)
+       null   = cancelled
+     Falls through (resolves with the original file) when Cropper.js
+     isn't loaded yet, or for SVG / animated-GIF where cropping makes
+     no sense. */
+  function defaultAspectFor(bind) {
+    if (!bind) return NaN;
+    if (/^hero\.photo$/.test(bind))                   return 16/9;
+    if (/^about\.photo$/.test(bind))                  return 3/4;
+    if (/^team\.members\.\d+\.photo$/.test(bind))     return 1;
+    if (/\.cover$|\.poster$/.test(bind))              return 16/9;
+    return NaN;
+  }
+  function shouldSkipCrop(file) {
+    const mime = file.type || "";
+    const name = (file.name || "").toLowerCase();
+    if (mime === "image/svg+xml" || name.endsWith(".svg")) return true;
+    if (mime === "image/gif"     || name.endsWith(".gif")) return true;
+    return false;
+  }
+
+  function cropImageInteractively(file, bind) {
+    return new Promise((resolve) => {
+      const modal = $("#cropModal");
+      /* Cropper.js not available (CDN blocked, or script still loading
+         on a cold start) or format we shouldn't crop — just pass through. */
+      if (!modal || typeof window.Cropper !== "function" || shouldSkipCrop(file)) {
+        return resolve(file);
+      }
+
+      const img       = $("#cropImage");
+      const chips     = $$(".crop-chip", modal);
+      const applyBtn  = $("#cropApply");
+      const skipBtn   = $("#cropSkip");
+      const cancelBtn = $("#cropCancel");
+      const closeBtn  = $("#cropClose");
+      const rotL  = $("#cropRotateL");
+      const rotR  = $("#cropRotateR");
+      const zIn   = $("#cropZoomIn");
+      const zOut  = $("#cropZoomOut");
+      const reset = $("#cropReset");
+
+      const url = URL.createObjectURL(file);
+      img.src = url;
+
+      let cropper = null;
+      let settled = false;
+      let activeRatio = defaultAspectFor(bind);
+
+      const ratioEq = (a, b) => {
+        if (Number.isNaN(a) && Number.isNaN(b)) return true;
+        if (Number.isNaN(a) || Number.isNaN(b)) return false;
+        return Math.abs(a - b) < 0.01;
+      };
+      function paintActiveChip() {
+        chips.forEach((c) => {
+          const v = c.dataset.ratio;
+          const r = v === "free" ? NaN : Number(v);
+          c.classList.toggle("is-active", ratioEq(r, activeRatio));
+        });
+      }
+
+      function finish(result) {
+        if (settled) return;
+        settled = true;
+        try { if (cropper) cropper.destroy(); } catch (_) {}
+        try { URL.revokeObjectURL(url); } catch (_) {}
+        modal.classList.add("is-hidden");
+        document.body.style.overflow = "";
+        document.removeEventListener("keydown", onKey);
+        modal.removeEventListener("click", onOverlay);
+        applyBtn.removeEventListener("click", onApply);
+        skipBtn.removeEventListener("click", onSkip);
+        cancelBtn.removeEventListener("click", onCancel);
+        closeBtn.removeEventListener("click", onCancel);
+        chips.forEach((c) => c.removeEventListener("click", onChip));
+        rotL.removeEventListener("click", onRotL);
+        rotR.removeEventListener("click", onRotR);
+        zIn.removeEventListener("click", onZIn);
+        zOut.removeEventListener("click", onZOut);
+        reset.removeEventListener("click", onReset);
+        resolve(result);
+      }
+
+      function onKey(e) {
+        if (e.key === "Escape") finish(null);
+        else if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onApply(); }
+      }
+      function onOverlay(e) { if (e.target === modal) finish(null); }
+      function onCancel()   { finish(null); }
+      function onSkip()     { finish(file); }
+      function onApply() {
+        if (!cropper) return finish(file);
+        const canvas = cropper.getCroppedCanvas({
+          maxWidth: 1920,
+          maxHeight: 1920,
+          imageSmoothingEnabled: true,
+          imageSmoothingQuality: "high",
+          fillColor: "#ffffff",
+        });
+        if (!canvas) return finish(file);
+        canvas.toBlob((blob) => {
+          if (!blob) return finish(file);
+          const base = (file.name || "upload").replace(/\.[^.]+$/, "");
+          const named = new File([blob], base + ".jpg", { type: "image/jpeg", lastModified: Date.now() });
+          finish(named);
+        }, "image/jpeg", 0.9);
+      }
+      function onChip(e) {
+        const v = e.currentTarget.dataset.ratio;
+        activeRatio = v === "free" ? NaN : Number(v);
+        if (cropper) cropper.setAspectRatio(Number.isNaN(activeRatio) ? NaN : activeRatio);
+        paintActiveChip();
+      }
+      function onRotL()  { if (cropper) cropper.rotate(-90); }
+      function onRotR()  { if (cropper) cropper.rotate(90); }
+      function onZIn()   { if (cropper) cropper.zoom(0.1); }
+      function onZOut()  { if (cropper) cropper.zoom(-0.1); }
+      function onReset() { if (cropper) cropper.reset(); }
+
+      function initCropper() {
+        try {
+          cropper = new window.Cropper(img, {
+            viewMode: 1,
+            dragMode: "move",
+            aspectRatio: activeRatio,
+            autoCropArea: 0.95,
+            background: false,
+            movable: true,
+            zoomable: true,
+            scalable: false,
+            rotatable: true,
+            cropBoxResizable: true,
+            cropBoxMovable: true,
+            responsive: true,
+            checkCrossOrigin: false,
+            checkOrientation: true,
+            toggleDragModeOnDblclick: false,
+          });
+        } catch (err) {
+          console.error("[crop] cropper init failed, falling back to original", err);
+          finish(file);
+        }
+        paintActiveChip();
+      }
+
+      document.addEventListener("keydown", onKey);
+      modal.addEventListener("click", onOverlay);
+      applyBtn.addEventListener("click", onApply);
+      skipBtn.addEventListener("click", onSkip);
+      cancelBtn.addEventListener("click", onCancel);
+      closeBtn.addEventListener("click", onCancel);
+      chips.forEach((c) => c.addEventListener("click", onChip));
+      rotL.addEventListener("click", onRotL);
+      rotR.addEventListener("click", onRotR);
+      zIn.addEventListener("click", onZIn);
+      zOut.addEventListener("click", onZOut);
+      reset.addEventListener("click", onReset);
+
+      modal.classList.remove("is-hidden");
+      document.body.style.overflow = "hidden";
+
+      if (img.complete && img.naturalWidth) {
+        initCropper();
+      } else {
+        img.addEventListener("load", initCropper, { once: true });
+        img.addEventListener("error", () => finish(file), { once: true });
+      }
+    });
+  }
+
   function wireUploadButtons() {
     /* One delegated handler — covers both the auto-injected small button
        (.btn--upload) and the upload-first photo-row primary button
@@ -1706,12 +1887,29 @@ images/haldi/02.jpg"></textarea>
       const cleanupPicker = () => { try { picker.remove(); } catch (_) {} };
 
       picker.addEventListener("change", async () => {
-        const file = picker.files && picker.files[0];
+        const picked = picker.files && picker.files[0];
         cleanupPicker();
-        if (!file) return;
+        if (!picked) return;
         const old = btn.textContent;
         btn.disabled = true;
         const setStage = (s) => { btn.textContent = s; };
+
+        let file = picked;
+        try {
+          setStage("Opening crop…");
+          const cropped = await cropImageInteractively(picked, bind);
+          if (!cropped) {
+            /* User cancelled the crop modal — abort the upload cleanly. */
+            btn.textContent = old;
+            btn.disabled = false;
+            return;
+          }
+          file = cropped;
+        } catch (err) {
+          console.warn("[crop] step failed, using original", err);
+          file = picked;
+        }
+
         setStage("Uploading…");
         try {
           const out = await uploadImageFile(file, setStage);

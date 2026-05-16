@@ -12,6 +12,20 @@
 
   <link rel="stylesheet" href="css/admin.css">
 
+  <!-- Cropper.js — interactive image crop step before upload.
+       Pinned to 1.6.2 + SRI so a CDN compromise can't ship arbitrary JS.
+       Admin-only; the public site doesn't load it. -->
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.css"
+        integrity="sha384-6LFfkTKLRlzFtgx8xsWyBdKGpcMMQTkv+dB7rAbugeJAu1Ym2q1Aji1cjHBG12Xh"
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer">
+  <script defer
+          src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.2/dist/cropper.min.js"
+          integrity="sha384-jrOgQzBlDeUNdmQn3rUt/PZD+pdcRBdWd/HWRqRo+n2OR2QtGyjSaJC0GiCeH+ir"
+          crossorigin="anonymous"
+          referrerpolicy="no-referrer"></script>
+
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' fill='%23F5F0E8'/><text x='50%25' y='62%25' text-anchor='middle' font-family='Georgia, serif' font-style='italic' font-size='30' fill='%238C2A38'>S·</text></svg>">
 </head>
 <body>
@@ -79,6 +93,49 @@
       <iframe class="preview__frame" id="previewFrame" src="index.html" title="Portfolio preview"></iframe>
     </section>
   </main>
+
+  <!-- Crop modal — opens between file-pick and upload. Cropper.js
+       instance is attached/destroyed by admin.js. Hidden by default. -->
+  <div class="crop-modal is-hidden" id="cropModal" role="dialog" aria-modal="true" aria-labelledby="cropTitle" aria-describedby="cropHint">
+    <div class="crop-modal__card">
+      <header class="crop-modal__head">
+        <div>
+          <div class="crop-modal__title" id="cropTitle">Crop your image</div>
+          <div class="crop-modal__hint" id="cropHint">Drag the handles to frame the photo. Use the preset ratios or freeform.</div>
+        </div>
+        <button type="button" class="crop-modal__x" id="cropClose" aria-label="Close">✕</button>
+      </header>
+
+      <div class="crop-modal__stage">
+        <img id="cropImage" alt="" />
+      </div>
+
+      <div class="crop-modal__tools">
+        <div class="crop-modal__ratios" role="group" aria-label="Aspect ratio">
+          <button type="button" class="crop-chip" data-ratio="1">1:1</button>
+          <button type="button" class="crop-chip" data-ratio="1.3333">4:3</button>
+          <button type="button" class="crop-chip" data-ratio="0.75">3:4</button>
+          <button type="button" class="crop-chip" data-ratio="1.7777">16:9</button>
+          <button type="button" class="crop-chip" data-ratio="free">Free</button>
+        </div>
+        <div class="crop-modal__icons" role="group" aria-label="Transform">
+          <button type="button" class="crop-icon" id="cropRotateL" title="Rotate left">↺</button>
+          <button type="button" class="crop-icon" id="cropRotateR" title="Rotate right">↻</button>
+          <button type="button" class="crop-icon" id="cropZoomIn"  title="Zoom in">＋</button>
+          <button type="button" class="crop-icon" id="cropZoomOut" title="Zoom out">−</button>
+          <button type="button" class="crop-icon" id="cropReset"   title="Reset">⟲</button>
+        </div>
+      </div>
+
+      <footer class="crop-modal__foot">
+        <button type="button" class="btn btn--ghost" id="cropSkip">Use original</button>
+        <div class="crop-modal__foot-right">
+          <button type="button" class="btn btn--ghost" id="cropCancel">Cancel</button>
+          <button type="button" class="btn btn--primary" id="cropApply">Crop &amp; Upload</button>
+        </div>
+      </footer>
+    </div>
+  </div>
 
   <!-- Font catalog (shared with index.html) -->
   <script src="js/fonts.js"></script>
