@@ -1682,10 +1682,12 @@ images/haldi/02.jpg"></textarea>
 
   /* ── Crop step ──────────────────────────────────────────────────────
      Between file-pick and upload we open Cropper.js in a modal so the
-     editor can frame the photo. Smart aspect default per bind:
-       hero.photo        → 16:9
-       about.photo       → 3:4
-       team.members.*    → 1:1
+     editor can frame the photo. Smart aspect default per bind, chosen
+     to match the live-site CSS frame for that slot so the crop preview
+     is what the visitor actually sees:
+       hero.photo        → 16:9   (full-bleed background, free-ish)
+       about.photo       → 4:5    (matches .about__photo aspect-ratio)
+       team.members.*    → 4:5    (matches .team__photo aspect-ratio)
        *.cover / *.poster→ 16:9
        everything else   → free
      User can switch ratio in the modal, "Use original" to skip, or
@@ -1698,8 +1700,8 @@ images/haldi/02.jpg"></textarea>
   function defaultAspectFor(bind) {
     if (!bind) return NaN;
     if (/^hero\.photo$/.test(bind))                   return 16/9;
-    if (/^about\.photo$/.test(bind))                  return 3/4;
-    if (/^team\.members\.\d+\.photo$/.test(bind))     return 1;
+    if (/^about\.photo$/.test(bind))                  return 4/5;
+    if (/^team\.members\.\d+\.photo$/.test(bind))     return 4/5;
     if (/\.cover$|\.poster$/.test(bind))              return 16/9;
     return NaN;
   }

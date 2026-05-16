@@ -1408,8 +1408,16 @@ body.has-cursor .lightbox { cursor: none; }
   }
   .section__title { font-size: 38px; }
 
-  .about__inner { grid-template-columns: 1fr; gap: 36px; align-items: start; }
-  .about__photo { aspect-ratio: 4/5; max-width: 360px; min-height: 0; }
+  .about__inner { grid-template-columns: 1fr; gap: 28px; align-items: start; }
+  /* Cameraman portrait: scales from ~190 px on 320 px phones up to a
+     240 px ceiling so it reads as a profile photo, not a billboard. */
+  .about__photo {
+    aspect-ratio: 4/5;
+    width: 100%;
+    max-width: clamp(180px, 60vw, 240px);
+    min-height: 0;
+    margin-inline: auto;
+  }
   .about__title { font-size: 32px; }
 
   .stories-intro__title { font-size: 30px; }
