@@ -1478,57 +1478,177 @@ images/haldi/02.jpg"></textarea>
     });
   }
 
-  async function uploadImageFile(file) {
-    if (!file) throw new Error("no file");
-    if (file.size > 25 * 1024 * 1024) throw new Error("Image is over 25 MB. Please compress it first.");
+  /* Netlify's synchronous functions cap request bodies at 6 MB, and an
+     over-limit POST returns a non-JSON edge response — so we always
+     downscale large images client-side before uploading. A 1920px JPEG
+     at q=0.85 puts almost every phone photo well under 1 MB. */
+  const UPLOAD_MAX_BYTES = 5 * 1024 * 1024;   // hard ceiling for the POST body
+  const RESIZE_TRIGGER   = 600 * 1024;         // images over ~600 KB get re-encoded
+  const RESIZE_MAX_EDGE  = 1920;
+  const RESIZE_QUALITY   = 0.85;
 
-    /* Try the server upload first. On production (Netlify Functions
-       running) this stores the file in Blobs and returns /api/images/<key>
-       — much smaller payload than embedding base64 inside data.js. */
+  /* If the image is large or not JPEG/PNG/WebP, run it through a canvas
+     to downscale + JPEG-encode. Returns a Blob (preferred for FormData)
+     plus a safe filename. SVGs are left alone; animated GIFs we leave
+     too since canvas would freeze them on the first frame. */
+  async function prepareImageForUpload(file) {
+    const mime = file.type || "";
+    const ext  = (file.name.split(".").pop() || "").toLowerCase();
+    const isSvg = mime === "image/svg+xml" || ext === "svg";
+    const isGif = mime === "image/gif" || ext === "gif";
+
+    if (isSvg) return { blob: file, name: file.name || "upload.svg" };
+    if (isGif && file.size < UPLOAD_MAX_BYTES) return { blob: file, name: file.name || "upload.gif" };
+
+    /* Small enough already and a supported mime: skip the re-encode. */
+    const acceptedAsIs = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
+    if (file.size < RESIZE_TRIGGER && acceptedAsIs.has(mime)) {
+      return { blob: file, name: file.name || "upload" };
+    }
+
+    try {
+      const blob = await resizeFileToJpegBlob(file, RESIZE_MAX_EDGE, RESIZE_QUALITY);
+      const base = (file.name || "upload").replace(/\.[^.]+$/, "");
+      return { blob, name: base + ".jpg" };
+    } catch (e) {
+      /* Canvas resize failed — fall back to the original file IF it fits
+         under the body limit; otherwise propagate so the user gets a
+         clear message instead of a hanging upload. */
+      if (file.size <= UPLOAD_MAX_BYTES) return { blob: file, name: file.name || "upload" };
+      throw new Error("Could not compress this image. Please pick a smaller file.");
+    }
+  }
+
+  function resizeFileToJpegBlob(file, maxLong, quality) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const longEdge = Math.max(img.naturalWidth, img.naturalHeight);
+        const ratio = longEdge > maxLong ? maxLong / longEdge : 1;
+        const w = Math.max(1, Math.round(img.naturalWidth  * ratio));
+        const h = Math.max(1, Math.round(img.naturalHeight * ratio));
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h;
+        const ctx = c.getContext("2d");
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
+        ctx.drawImage(img, 0, 0, w, h);
+        c.toBlob((blob) => {
+          URL.revokeObjectURL(url);
+          if (!blob) return reject(new Error("canvas.toBlob returned null"));
+          resolve(blob);
+        }, "image/jpeg", quality);
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("could not decode image")); };
+      img.src = url;
+    });
+  }
+
+  async function uploadImageFile(file, onStage) {
+    if (!file) throw new Error("No file selected.");
+    /* Some mobile browsers report an empty `file.type` for camera shots —
+       trust the extension in that case rather than rejecting outright. */
+    const mime = file.type || "";
+    const extOk = /\.(jpe?g|png|webp|gif|avif|svg|heic|heif)$/i.test(file.name || "");
+    if (mime && !/^image\//.test(mime)) {
+      throw new Error("That doesn't look like an image. Pick a JPG, PNG, WebP, GIF, or SVG.");
+    }
+    if (!mime && !extOk) {
+      throw new Error("Couldn't tell what kind of file that is. Try a JPG or PNG.");
+    }
+    if (file.size > 30 * 1024 * 1024) {
+      throw new Error("Image is over 30 MB — please pick a smaller file.");
+    }
+
+    if (onStage) onStage("Preparing…");
+    const { blob, name } = await prepareImageForUpload(file);
+
+    if (blob.size > UPLOAD_MAX_BYTES) {
+      /* Resize couldn't get it under the server's accepted body size.
+         Fall back to embedding so the user is never blocked. */
+      return await embedAsDataUri(blob);
+    }
+
     const fd = new FormData();
-    fd.append("file", file, file.name);
+    fd.append("file", blob, name);
+
+    if (onStage) onStage("Uploading…");
+    const ctrl = new AbortController();
+    const killer = setTimeout(() => ctrl.abort(), 60_000);
     let res;
     try {
       res = await fetch("/api/upload", {
         method: "POST",
         credentials: "same-origin",
         body: fd,
+        signal: ctrl.signal,
       });
-    } catch (_) {
-      /* Network error — usually means we're on the local static server
-         with no Netlify Functions. Fall back to base64 embedding. */
-      return await embedAsDataUri(file);
+    } catch (err) {
+      clearTimeout(killer);
+      if (err && err.name === "AbortError") {
+        throw new Error("Upload timed out. Try again on a stronger connection.");
+      }
+      /* Network error — typically a local static server with no
+         Functions runtime. Embed as a data URI so the workflow works. */
+      console.warn("[upload] network error, embedding as data URI", err);
+      return await embedAsDataUri(blob);
     }
+    clearTimeout(killer);
+
     if (res.status === 401) {
       sessionStorage.removeItem(SESSION_KEY);
       $("#loginModal").classList.remove("is-hidden");
       $("#loginPwd").focus();
-      throw new Error("Please log in again.");
+      throw new Error("Your editor session expired. Please log in again.");
     }
     if (res.status === 404) {
-      /* /api/upload doesn't exist on this host — local Python server,
-         GitHub Pages, etc. Embed as data URI so the workflow still works. */
-      return await embedAsDataUri(file);
+      /* /api/upload doesn't exist on this host — embed locally. */
+      return await embedAsDataUri(blob);
     }
     if (!res.ok) {
-      const info = await res.json().catch(() => ({}));
-      throw new Error(info.error || ("Upload failed (" + res.status + ")"));
+      const detail = await readErrorDetail(res);
+      console.error("[upload] failed", res.status, detail);
+      if (res.status === 413) {
+        throw new Error("Server rejected the image as too large. Try a smaller photo.");
+      }
+      throw new Error(detail || ("Upload failed (HTTP " + res.status + ")."));
     }
-    return res.json();
+
+    let payload;
+    try { payload = await res.json(); }
+    catch (e) { throw new Error("Server returned an unreadable response. Try again."); }
+    if (!payload || !payload.url) throw new Error("Server didn't return an image URL.");
+    return payload;
   }
 
-  /* Local fallback: client-side resize + JPEG re-encode, then embed as a
-     data URI. Keeps payload reasonable when there's no server upload
-     endpoint. Resizes to fit within 1800 px on the long edge at q=0.82. */
-  async function embedAsDataUri(file) {
+  /* Pull the most useful error message out of a non-OK response —
+     prefers JSON {error}, falls back to plain text, then to a generic
+     message. Truncates so we never alert a 400 KB HTML page. */
+  async function readErrorDetail(res) {
+    const ct = (res.headers.get("content-type") || "").toLowerCase();
+    try {
+      if (ct.includes("application/json")) {
+        const j = await res.json();
+        return j && (j.error || j.message) ? String(j.error || j.message) : "";
+      }
+      const txt = await res.text();
+      const clean = txt.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+      return clean.slice(0, 200);
+    } catch (_) { return ""; }
+  }
+
+  /* Local / no-server fallback: client-side resize + JPEG re-encode,
+     then embed as a data URI. Used when /api/upload is unreachable
+     or the resized payload still exceeds the server's body limit. */
+  async function embedAsDataUri(fileOrBlob) {
     const dataUri = await new Promise((resolve, reject) => {
       const r = new FileReader();
       r.onload = (e) => resolve(String(e.target.result || ""));
       r.onerror = reject;
-      r.readAsDataURL(file);
+      r.readAsDataURL(fileOrBlob);
     });
-    /* SVGs and tiny files: no point resizing — just embed verbatim. */
-    if (/^data:image\/svg/.test(dataUri) || file.size < 220 * 1024) {
+    if (/^data:image\/svg/.test(dataUri) || fileOrBlob.size < 220 * 1024) {
       return { ok: true, url: dataUri, embedded: true };
     }
     try {
@@ -1570,23 +1690,32 @@ images/haldi/02.jpg"></textarea>
       e.preventDefault();
       const bind = btn.dataset.uploadTarget;
       const target = $(`[data-bind="${bind.replace(/"/g, '\\"')}"]`);
-      if (!target) return;
+      if (!target) {
+        console.warn("[upload] no target input for bind", bind);
+        return;
+      }
       const picker = document.createElement("input");
       picker.type = "file";
       picker.accept = "image/*";
       /* iOS Safari silently no-ops .click() on display:none file inputs —
-         keep it in the layout/a11y tree but visually invisible. */
-      picker.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;pointer-events:none;";
+         keep it in the layout/a11y tree but visually invisible. We do NOT
+         set pointer-events:none, because some mobile WebViews suppress
+         the change event when the input is pointer-disabled. */
+      picker.style.cssText = "position:fixed;left:-9999px;top:0;width:1px;height:1px;opacity:0;";
       document.body.appendChild(picker);
+      const cleanupPicker = () => { try { picker.remove(); } catch (_) {} };
+
       picker.addEventListener("change", async () => {
         const file = picker.files && picker.files[0];
-        document.body.removeChild(picker);
+        cleanupPicker();
         if (!file) return;
         const old = btn.textContent;
         btn.disabled = true;
-        btn.textContent = "Uploading…";
+        const setStage = (s) => { btn.textContent = s; };
+        setStage("Uploading…");
         try {
-          const out = await uploadImageFile(file);
+          const out = await uploadImageFile(file, setStage);
+          if (!out || !out.url) throw new Error("Upload returned no URL.");
           target.value = out.url;
           target.dispatchEvent(new Event("input", { bubbles: true }));
 
@@ -1612,11 +1741,17 @@ images/haldi/02.jpg"></textarea>
             btn.disabled = false;
           }, 1200);
         } catch (err) {
-          alert(err.message || "Upload failed.");
+          console.error("[upload] error", err);
+          alert(err && err.message ? err.message : "Upload failed. Check the console for details.");
           btn.textContent = old;
           btn.disabled = false;
         }
       });
+
+      /* Some mobile browsers never fire change if the user backs out — we
+         GC the picker after a generous delay so we don't leak nodes. */
+      setTimeout(() => { if (picker.isConnected && !(picker.files && picker.files[0])) cleanupPicker(); }, 5 * 60 * 1000);
+
       picker.click();
     });
 
