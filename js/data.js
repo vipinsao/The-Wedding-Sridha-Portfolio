@@ -9,7 +9,7 @@ window.SRIDHA_DATA = {
   "hero": {
     "eyebrow": "Indian Wedding Photography ",
     "title": "Capture The Magic In A Frame",
-    "body": "Editorial, unhurried, deeply personal. Documenting the rituals and the in-between moments — from the first haldi smudge to the last reception toast.",
+    "body": "Editorial, unhurried, deeply personal — from the first haldi smudge to the last toast.",
     "ctaText": "Begin a Conversation",
     "ctaHref": "#contact",
     "photo": "https://lh3.googleusercontent.com/d/1k1TyuJtbxEsozEYbiNMMLpIbIuxOsC4n=w2400"
