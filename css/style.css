@@ -634,10 +634,14 @@ body.has-cursor .cursor { display: block; }
 }
 .about__photo {
   position: relative;
-  /* Fixed 4:5 portrait — sized by column width, not by text height. */
+  /* Fixed 4:5 portrait — sized by column width, not by text height.
+     Capped at 340 px wide on desktop so the photo reads as a profile,
+     not a half-screen poster. */
   aspect-ratio: 4/5;
-  max-height: 560px;
   width: 100%;
+  max-width: 340px;
+  max-height: 440px;
+  margin-inline: auto;              /* centre inside the (now wider) photo cell */
   background: var(--bg-deep);
   overflow: hidden;
   border-radius: 0;                /* sharp corners */
@@ -651,26 +655,33 @@ body.has-cursor .cursor { display: block; }
   box-shadow: inset 0 0 0 1px rgba(0,0,0,0.04), 0 30px 60px -30px rgba(30,20,20,0.4);
   pointer-events: none;
 }
-.about__text { display: grid; gap: 22px; align-content: center; }
+.about__text { display: grid; gap: 20px; align-content: center; }
 .about__title {
   font-family: var(--f-serif);
   font-weight: 400;
-  font-size: clamp(40px, 4.6vw, 64px);
-  line-height: 1.05;
+  /* Smaller than the loud display heading so "Hello, I'm Takeshwar
+     Dewangan" lands on one line across the text column. */
+  font-size: clamp(28px, 3.4vw, 46px);
+  line-height: 1.1;
   color: var(--ink);
 }
 .about__body {
-  font-size: 16px;
+  /* Italic serif and a touch larger so a short photographer's couplet
+     carries weight instead of looking like a small caption. */
+  font-family: var(--f-serif);
+  font-style: italic;
+  font-weight: 300;
+  font-size: clamp(18px, 1.5vw, 22px);
   color: var(--ink-soft);
-  line-height: 1.8;
-  max-width: 540px;
+  line-height: 1.55;
+  max-width: 560px;
 }
 .about__sig {
   font-family: var(--f-serif);
   font-style: italic;
   font-size: 22px;
   color: var(--maroon);
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 /* ── Team / "Meet the photographers" ────────────────────────────────── */
@@ -1504,17 +1515,19 @@ body.has-cursor .lightbox { cursor: none; }
   }
   .section__title { font-size: 38px; }
 
-  .about__inner { grid-template-columns: 1fr; gap: 28px; align-items: start; }
-  /* Cameraman portrait: scales from ~190 px on 320 px phones up to a
-     240 px ceiling so it reads as a profile photo, not a billboard. */
+  .about__inner { grid-template-columns: 1fr; gap: 24px; align-items: start; }
+  /* Cameraman portrait: scales from ~180 px on 320 px phones up to a
+     220 px ceiling so it reads as a profile photo, not a billboard. */
   .about__photo {
     aspect-ratio: 4/5;
     width: 100%;
-    max-width: clamp(180px, 60vw, 240px);
+    max-width: clamp(170px, 55vw, 220px);
+    max-height: none;
     min-height: 0;
     margin-inline: auto;
   }
-  .about__title { font-size: 32px; }
+  .about__title { font-size: 26px; line-height: 1.15; }
+  .about__body  { font-size: 17px; }
 
   .stories-intro__title { font-size: 30px; }
   .stories-intro__body { font-size: 17px; }
@@ -1563,8 +1576,10 @@ body.has-cursor .lightbox { cursor: none; }
    Phones get a single-column stack; tablets have enough width for a
    two-column about/contact layout and a roomier hero. */
 @media (min-width: 601px) and (max-width: 900px) {
-  .about__inner { grid-template-columns: 1fr 1.2fr; gap: 36px; }
-  .about__photo { max-width: none; aspect-ratio: 4/5; }
+  .about__inner { grid-template-columns: 1fr 1.3fr; gap: 32px; align-items: center; }
+  /* Tablet: cap the photo so the bio breathes — without it the photo
+     ate the full 1fr column (~400 px tall) and dominated the section. */
+  .about__photo { max-width: 260px; max-height: 325px; aspect-ratio: 4/5; }
   .contact__inner { grid-template-columns: 1fr 1.2fr; gap: 40px; }
   .form__row { grid-template-columns: 1fr 1fr; }
   .testimonials__grid { grid-template-columns: repeat(2, 1fr); gap: 32px; }

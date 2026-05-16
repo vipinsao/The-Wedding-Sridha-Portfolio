@@ -17,8 +17,8 @@ window.SRIDHA_DATA = {
   "about": {
     "eyebrow": "Behind the Lens",
     "title": "Hello, I'm Takeshwar Dewangan",
-    "body": "I photograph Indian weddings as I'd want my own remembered — slowly, attentively, in a way that honours the rituals without flattening them. Eight years, more than ninety weddings, and a quiet conviction that the best frames find themselves when no one is performing for the camera.",
-    "signature": "— S.",
+    "body": "I photograph the moments your guests are too caught up to notice — the breath before the vow, the glance after the laugh. Everything else is decoration.",
+    "signature": "— Takesh",
     "photo": "images/about.jpeg"
   },
   "storiesIntro": {
