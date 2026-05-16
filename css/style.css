@@ -21,6 +21,17 @@
   --rule-soft: rgba(20, 36, 29, 0.07);
   --field:     rgba(20, 36, 29, 0.18);
 
+  /* Topbar text — slightly darker than --ink for headline presence
+     against the cream bar. Overridden in dark mode below. */
+  --topbar-text:    #0E1814;
+  --topbar-text-2:  #13231D;
+
+  /* Floating surfaces that need their own tint (dropdown panels, soft
+     hover washes). Both flip in dark mode so the dropdown becomes a
+     warm dark panel instead of a cream sheet on a near-black page. */
+  --dropdown-bg:    rgba(225, 213, 193, 0.98);
+  --surface-hover:  rgba(20, 36, 29, 0.06);
+
   --f-display: "Italiana", "Cormorant Garamond", serif;
   --f-serif:   "Cormorant Garamond", "Times New Roman", serif;
   --f-sans:    "Manrope", "Helvetica Neue", Arial, sans-serif;
@@ -29,6 +40,50 @@
   --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
 
   --pad-x:   max(28px, 5vw);
+}
+
+/* ── Dark mode tokens ──────────────────────────────────────────────────
+   Curated dark palette — kept in the same "warm photography studio"
+   mood as the light mode, not a cold tech-dark. The sage accent is
+   lightened so it still reads as a primary surface against a near-black
+   bg; gold is brightened a notch for vibrance. applyTheme() in main.js
+   skips its surface overrides while data-theme="dark" is active, so
+   these values aren't fighting inline styles. */
+:root[data-theme="dark"] {
+  --bg:        #0E1612;        /* deep forest-black */
+  --bg-alt:    #161F1A;        /* elevated panel */
+  --bg-deep:   #0A100D;        /* inset / deepest */
+  --paper:     #1B2620;        /* card / paper surface */
+
+  --ink:       #ECE5DA;        /* warm cream */
+  --ink-soft:  #C5BAA9;        /* muted cream — body */
+  --ink-mute:  #80766A;        /* hint text */
+
+  --maroon:    #7DAD9B;        /* lightened sage — primary accent */
+  --maroon-dk: #A3C0B3;        /* hover state (lighter on dark = more energy) */
+
+  --gold:      #D4B689;        /* brighter brass */
+  --gold-soft: #B89A6F;
+
+  --cta-text:  #0E1612;        /* dark text on lightened accent */
+  --rule:      rgba(236, 229, 218, 0.14);
+  --rule-soft: rgba(236, 229, 218, 0.07);
+  --field:     rgba(236, 229, 218, 0.18);
+
+  --topbar-text:    var(--ink);
+  --topbar-text-2:  var(--ink-soft);
+
+  --dropdown-bg:    rgba(27, 38, 32, 0.96);     /* warm dark panel */
+  --surface-hover:  rgba(236, 229, 218, 0.08);  /* cream wash on hover */
+
+  color-scheme: dark;
+}
+
+/* Smooth theme transition on the surfaces most likely to change.
+   Limited to a few properties to avoid animating layout. */
+html { transition: background-color 0.28s var(--ease); }
+body, .topbar, .section, .footer, input, textarea, button {
+  transition: background-color 0.28s var(--ease), color 0.28s var(--ease), border-color 0.28s var(--ease);
 }
 
 /* ── Reset ──────────────────────────────────────────────────────────── */
@@ -186,7 +241,7 @@ body.has-cursor .cursor { display: block; }
   font-style: italic;
   font-size: 18px;
   letter-spacing: 0.04em;
-  color: #0E1814;            /* darker than --ink for stronger presence */
+  color: var(--topbar-text);    /* deeper than --ink in light, --ink in dark */
   font-weight: 500;
   display: flex; align-items: baseline; gap: 4px;
 }
@@ -257,7 +312,7 @@ body.has-cursor .cursor { display: block; }
   top: calc(100% + 12px);
   right: 0;
   min-width: 220px;
-  background: rgba(225, 213, 193, 0.98);
+  background: var(--dropdown-bg);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--rule);
@@ -292,7 +347,7 @@ body.has-cursor .cursor { display: block; }
 }
 .topnav__dropdown a::after { display: none; }
 .topnav__dropdown a:hover {
-  background: rgba(20, 36, 29, 0.06);
+  background: var(--surface-hover);
   color: var(--maroon);
 }
 .topnav__dropdown-num {
@@ -319,7 +374,7 @@ body.has-cursor .cursor { display: block; }
 }
 .topnav a {
   font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase;
-  color: #13231D;            /* darker than --ink-soft for stronger contrast */
+  color: var(--topbar-text-2);     /* deeper than --ink-soft in light, --ink-soft in dark */
   font-weight: 600;
   position: relative;
   transition: color 0.3s var(--ease);
@@ -336,17 +391,58 @@ body.has-cursor .cursor { display: block; }
 
 .topnav__cta {
   padding: 10px 18px;
-  border: 1px solid #13231D;
+  border: 1px solid var(--topbar-text-2);
   background: transparent;
   font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase;
-  color: #0E1814 !important;
+  color: var(--topbar-text) !important;
   font-weight: 600;
   transition: all 0.3s var(--ease);
 }
 .topnav__cta::after { display: none; }
-.topnav__cta:hover { background: #0E1814; color: var(--bg) !important; border-color: #0E1814; }
+.topnav__cta:hover { background: var(--topbar-text); color: var(--bg) !important; border-color: var(--topbar-text); }
 .topbar.is-light .topnav__cta { color: #fff !important; border-color: rgba(255,255,255,0.7); }
 .topbar.is-light .topnav__cta:hover { background: #fff; color: var(--ink) !important; border-color: #fff; }
+
+/* Theme toggle — small square icon button between the nav links and
+   the Enquire CTA. Light mode shows a moon (offers to switch to dark);
+   dark mode shows a sun. Matches the topnav CTA's visual weight so it
+   reads as part of the same control row. */
+.topnav__theme {
+  width: 36px; height: 36px;
+  display: inline-grid; place-items: center;
+  background: transparent;
+  border: 1px solid var(--topbar-text-2);
+  color: var(--topbar-text);
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.25s var(--ease), color 0.25s var(--ease), border-color 0.25s var(--ease), transform 0.4s var(--ease);
+}
+.topnav__theme:hover {
+  background: var(--topbar-text);
+  color: var(--bg);
+  border-color: var(--topbar-text);
+}
+.topnav__theme:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.topnav__theme svg { width: 16px; height: 16px; display: block; }
+.topnav__theme .sun { display: none; }
+:root[data-theme="dark"] .topnav__theme .moon { display: none; }
+:root[data-theme="dark"] .topnav__theme .sun  { display: block; }
+.topbar.is-light .topnav__theme {
+  color: #fff;
+  border-color: rgba(255,255,255,0.7);
+}
+.topbar.is-light .topnav__theme:hover {
+  background: #fff; color: var(--ink); border-color: #fff;
+}
+/* A short bloom animation when the user clicks — confirms the switch
+   landed without being a heavy reveal. */
+.topnav__theme.is-toggling { transform: rotate(360deg); }
+@media (prefers-reduced-motion: reduce) {
+  .topnav__theme, .topnav__theme.is-toggling { transition: none; transform: none; }
+}
 
 /* ── Hero (full-bleed photo + overlay) ──────────────────────────────── */
 .hero {
@@ -742,7 +838,7 @@ body.has-cursor .cursor { display: block; }
   scroll-snap-align: start;
   white-space: nowrap;
 }
-.stories__tab:hover { color: var(--ink); background: rgba(20, 36, 29, 0.04); }
+.stories__tab:hover { color: var(--ink); background: var(--surface-hover); }
 .stories__tab.is-active {
   background: var(--paper);
   color: var(--ink);

@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>The Wedding Sridha — Indian Wedding Photography</title>
 
+  <!-- Theme hydration — runs BEFORE the stylesheet links so the saved
+       mode is applied before first paint, no light→dark flash. Default
+       is light when no preference is stored; we intentionally don't
+       honour prefers-color-scheme so visitors always land on the brand's
+       light identity unless they've explicitly chosen dark. -->
+  <script>
+    (function () {
+      try {
+        var pref = localStorage.getItem('sridha:theme');
+        if (pref === 'dark' || pref === 'light') {
+          document.documentElement.setAttribute('data-theme', pref);
+        }
+      } catch (_) {}
+    })();
+  </script>
+
   <!-- SEO -->
   <meta name="description" content="Heirloom photography for Indian weddings. Editorial documentation of haldi, mehendi, sangeet, baraat, pheras, reception and intimate couple portraits — by The Wedding Sridha.">
   <meta name="theme-color" content="#D8E8E0">
@@ -83,6 +99,17 @@
         <ul class="topnav__dropdown" id="storiesDropdown" role="menu" aria-label="Jump to a story"></ul>
       </div>
       <a href="#about">About</a>
+      <button type="button" class="topnav__theme" id="themeToggle" aria-label="Switch to dark mode" title="Toggle light / dark">
+        <!-- Moon: shown in light mode (offers dark). Stroked, 16×16. -->
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"></path>
+        </svg>
+        <!-- Sun: shown in dark mode (offers light). -->
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="4"></circle>
+          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path>
+        </svg>
+      </button>
       <a href="#contact" class="topnav__cta">Enquire</a>
     </nav>
   </header>

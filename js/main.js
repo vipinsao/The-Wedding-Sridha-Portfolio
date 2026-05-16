@@ -142,12 +142,28 @@
   }
 
   function applyTheme() {
+    const root = document.documentElement;
+    const isDark = root.getAttribute("data-theme") === "dark";
+
+    /* Dark mode: the curated palette in CSS handles every surface.
+       Skip the admin theme entirely — admin's bg/ink are tuned for
+       light backgrounds and would blow up contrast on dark. The mobile
+       address-bar tint is set from the dark-mode --bg variable so it
+       blends with the page. */
+    if (isDark) {
+      const meta = document.querySelector('meta[name="theme-color"]');
+      if (meta) {
+        const dark = getComputedStyle(root).getPropertyValue("--bg").trim();
+        if (dark) meta.setAttribute("content", dark);
+      }
+      return;
+    }
+
     const t = DATA.theme;
     if (!t || !t.bg || !t.ink) return;       /* CSS defaults stand */
     const bg = t.bg, ink = t.ink;
     const inkRgb = hexToRgb(ink);
     if (!hexToRgb(bg) || !inkRgb) return;
-    const root = document.documentElement;
     /* Surfaces — pure bg, then progressively tinted toward the accent. */
     root.style.setProperty("--bg",       bg);
     root.style.setProperty("--bg-alt",   mixColor(bg, ink, 0.08));
@@ -172,6 +188,42 @@
     /* Mobile address-bar tint matches the page bg. */
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", bg);
+  }
+
+  /* ── Theme toggle (light ↔ dark) ───────────────────────────────────
+     Pre-paint hydration in index.html <head> already set data-theme
+     from localStorage. Here we wire the topnav button, keep ARIA in
+     sync, and re-run applyTheme on flip so brand-theme overrides
+     don't leak into dark mode (and vice-versa). */
+  function setCurrentMode(mode) {
+    const root = document.documentElement;
+    if (mode === "dark") root.setAttribute("data-theme", "dark");
+    else                 root.removeAttribute("data-theme");
+    try { localStorage.setItem("sridha:theme", mode); } catch (_) {}
+    const btn = document.getElementById("themeToggle");
+    if (btn) {
+      btn.setAttribute("aria-label",
+        mode === "dark" ? "Switch to light mode" : "Switch to dark mode");
+    }
+    /* Reset any inline brand-theme overrides before re-applying — when
+       switching into dark mode we want the CSS variables to come from
+       the :root[data-theme="dark"] block, not from leftover inline
+       styles set by a previous applyTheme() pass. */
+    const surfaceVars = ["--bg","--bg-alt","--bg-deep","--ink","--ink-soft","--ink-mute","--maroon","--maroon-dk","--cta-text","--rule","--rule-soft","--field"];
+    surfaceVars.forEach((v) => root.style.removeProperty(v));
+    applyTheme();
+  }
+  function setupThemeToggle() {
+    const btn = document.getElementById("themeToggle");
+    if (!btn) return;
+    const current = () => (document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light");
+    btn.setAttribute("aria-label",
+      current() === "dark" ? "Switch to light mode" : "Switch to dark mode");
+    btn.addEventListener("click", () => {
+      btn.classList.add("is-toggling");
+      setTimeout(() => btn.classList.remove("is-toggling"), 420);
+      setCurrentMode(current() === "dark" ? "light" : "dark");
+    });
   }
 
   /* ── 3b. Brand mark in topbar + loader + title ────────────────────── */
@@ -1092,6 +1144,7 @@
     setupCursor();
     setupTopbar();
     setupDropdown();
+    setupThemeToggle();
     setupReveals();
     setupGalleries();
     setupTabs();
